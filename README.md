@@ -1,0 +1,1 @@
+# kumpas-choir-operations-platform
