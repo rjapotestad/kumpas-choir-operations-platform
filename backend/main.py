@@ -1,9 +1,6 @@
 from fastapi import FastAPI
 app = FastAPI()
 
-@app.get("/health")
+@app.get("/appinfo")
 async def test_get():
-    return {"health":"success"}
-@app.get("/version")
-async def test_get():
-    return {"version":"success"}
+    return {"app":"Kumpas","version":"0.1.0","status":"healthy"}
