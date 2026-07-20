@@ -1,1 +1,1 @@
-# kumpas-choir-operations-platform
+# Kumpas: A Choir Operations Platform
