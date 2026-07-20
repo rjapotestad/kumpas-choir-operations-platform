@@ -2,8 +2,15 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from app.database import Base, engine
 from app.models.member import Member as MemberModel
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 Base.metadata.create_all(bind=engine)
 members = []
 #Get App Info
