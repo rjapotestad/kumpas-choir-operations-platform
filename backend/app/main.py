@@ -1,7 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from app.database import Base, engine
-from app.models.member import Member as MemberModel
+from app.database import Base, engine, get_db
+from app.models.song import Song as SongModel
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -12,55 +13,64 @@ app.add_middleware(
     allow_headers=["*"],
 )
 Base.metadata.create_all(bind=engine)
-members = []
 #Get App Info
 @app.get("/appinfo")
 async def get_appinfo():
     return {"app":"Kumpas","version":"0.1.0","status":"healthy"}
 
-class Member(BaseModel):
-    id:int
-    name:str
-    email:str
+class SongCreate(BaseModel):
+    title:str
+    composer_arranger:str|None = None
+    notes:str|None = None
 
-#Print all members
-@app.get("/members")
-async def get_members_db():
-    mems=[]    
-    for member in members:
-        mems.append(member.name)
-    return mems
-#Print member based on ID
-@app.get("/members/{id}")
-async def get_member(id:int):
-    for member in members:
-        if member.id == id:
-            return member
-    return {"error":"member not found"}
-#Add new member
-@app.post("/members")
-async def add_member(member:Member):
-    members.append(member)
-    return {"Result":"Member successfully added"}
-#Update member data 
-@app.put("/members/{id}")
-async def update_member(id:int,name:str|None = None,voice_section:str|None=None):
-    for member in members:
-        if member.id==id:
-            if name:
-                member.name=name
-            if voice_section:
-                member.voice_section=voice_section
-            return {"Updated":member}
-    return {"error":"member not found"}
-#Delete member
-@app.delete("/members/{id}")
-async def delete_member(id:int):
-    for member in members:
-        if member.id == id:
-            members.remove(member)
-            return {"Result":f"Member {id} deleted"}
-    return {"error":"member not found"}
+class SongUpdate(BaseModel):
+    title:str|None = None
+    composer_arranger:str|None = None
+    notes:str|None = None
+
+#Print all songs
+@app.get("/songs")
+async def get_songs_db(db: Session = Depends(get_db)):
+    return db.query(SongModel).all()
+#Print songs based on ID
+@app.get("/songs/{id}")
+async def get_song(id:int, db: Session = Depends(get_db)):
+    song = db.query(SongModel).filter(SongModel.id == id).first()
+    if not song:
+        raise HTTPException(status_code=404, detail="song not found")
+    return song
+#Add new songs
+@app.post("/songs")
+async def add_song(song: SongCreate, db: Session = Depends(get_db)):
+    new_song = SongModel(**song.model_dump())
+    db.add(new_song)
+    db.commit()
+    db.refresh(new_song)
+    return new_song
+#Update song data 
+@app.put("/songs/{id}")
+async def update_song(id:int, updates: SongUpdate, db: Session = Depends(get_db)):
+    song = db.query(SongModel).filter(SongModel.id == id).first()
+    if not song:
+        raise HTTPException(status_code=404, detail="song not found")
+    if updates.title:
+        song.title = updates.title
+    if updates.composer_arranger:
+        song.composer_arranger = updates.composer_arranger
+    if updates.notes:
+        song.notes = updates.notes
+    db.commit()
+    db.refresh(song)
+    return song
+#Delete song
+@app.delete("/songs/{id}")
+async def delete_song(id:int, db: Session = Depends(get_db)):
+    song = db.query(SongModel).filter(SongModel.id == id).first()
+    if not song:
+        raise HTTPException(status_code=404, detail="song not found")
+    db.delete(song)
+    db.commit()
+    return {"Result":f"song {id} deleted"}
 
     
 

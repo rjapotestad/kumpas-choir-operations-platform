@@ -11,6 +11,9 @@ venv/
 node_modules/
 dist/
 
+# Test artifacts
+test.db
+
 # OS junk
 .DS_Store
 Thumbs.db
