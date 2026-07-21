@@ -1,23 +1,21 @@
-import { useState, useEffect } from 'react'
-import { getAppInfo } from './api/client'
+import { useState } from 'react'
+import SongList from './components/SongList'
+import SongForm from './components/SongForm'
 
 function App() {
-  const [appInfo, setAppInfo] = useState(null)
+  const [editingSong, setEditingSong] = useState(null)
+  const [refreshSignal, setRefreshSignal] = useState(0)
 
-useEffect(() => {
-  getAppInfo()
-    .then((data) => setAppInfo(data))
-    .catch((error) => console.error('Failed to fetch appinfo:', error))
-}, [])
+  function handleSaved() {
+    setEditingSong(null)
+    setRefreshSignal((prev) => prev + 1)
+  }
 
   return (
     <div>
-      <h1>Kumpas</h1>
-      {appInfo ? (
-        <p>{appInfo.app} v{appInfo.version} — {appInfo.status}</p>
-      ) : (
-        <p>Loading...</p>
-      )}
+      <h1>Kumpas — Song Library</h1>
+      <SongForm existingSong={editingSong} onSaved={handleSaved} />
+      <SongList onEdit={setEditingSong} refreshSignal={refreshSignal} />
     </div>
   )
 }
