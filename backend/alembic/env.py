@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app.database import Base, DATABASE_URL
 from app.models.song import Song  # noqa: F401 — import registers the table on Base.metadata
+from app.models.rehearsal_plan import RehearsalPlan, RehearsalPlanItem  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

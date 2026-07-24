@@ -116,6 +116,41 @@ POST /songs
 }
 ```
 
+### Rehearsal Plans
+
+A rehearsal plan is a date with an ordered set of time-boxed song blocks (items). Deleting a plan cascades and deletes its items too.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/rehearsal-plans` | List all plans (each includes its items) |
+| `GET` | `/rehearsal-plans/{id}` | Get a single plan, including its items |
+| `POST` | `/rehearsal-plans` | Create a plan |
+| `DELETE` | `/rehearsal-plans/{id}` | Delete a plan (cascades to its items) |
+| `POST` | `/rehearsal-plans/{id}/items` | Add a song block to a plan |
+| `PUT` | `/rehearsal-plans/{id}/items/{item_id}` | Update an item's time/duration/order |
+| `DELETE` | `/rehearsal-plans/{id}/items/{item_id}` | Remove a song block from a plan |
+
+**Rehearsal Plan fields**: `date` (required, `YYYY-MM-DD`), `title` (optional), `notes` (optional)
+**Rehearsal Plan Item fields**: `song_id` (required, must reference an existing song), `start_time` (optional, e.g. `"18:30"`), `duration_minutes` (optional), `order_index` (required)
+
+Example — create a plan, then add a song to it:
+```json
+POST /rehearsal-plans
+{
+  "date": "2026-08-01",
+  "title": "August Kickoff"
+}
+```
+```json
+POST /rehearsal-plans/1/items
+{
+  "song_id": 3,
+  "start_time": "18:00",
+  "duration_minutes": 15,
+  "order_index": 0
+}
+```
+
 ## Roadmap
 
 Kumpas is developed module by module. Current focus:
