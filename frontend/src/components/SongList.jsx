@@ -1,49 +1,42 @@
-import { useState, useEffect } from 'react'
-import { useDraggable } from '@dnd-kit/core'
-import { getSongs, deleteSong } from '../api/client'
+import { useSortable } from '@dnd-kit/sortable'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
-function DraggableSongTitle({ song }) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+function SortableSongItem({ song, onEdit, onDelete }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: `song-${song.id}`,
     data: { song },
   })
 
   const style = {
-    cursor: 'grab',
-    display: 'inline-block',
-    ...(transform && { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }),
+    transform: CSS.Transform.toString(transform),
+    transition,
   }
 
   return (
-    <span ref={setNodeRef} style={style} {...listeners} {...attributes}>
-      {song.title}
-      {song.composer_arranger && ` — ${song.composer_arranger}`}
-    </span>
+    <li ref={setNodeRef} style={style}>
+      <span className="song-list-title" {...listeners} {...attributes}>
+        {song.title}
+        {song.composer_arranger && ` — ${song.composer_arranger}`}
+      </span>
+      <div className="song-actions">
+        <button onClick={() => onEdit(song)}>Edit</button>
+        <button onClick={() => onDelete(song.id)}>Delete</button>
+      </div>
+    </li>
   )
 }
 
-function SongList({onEdit, refreshSignal}){
-    const [songs, setSongs] = useState([])
-
-    useEffect(()=>{
-        getSongs().then((data)=>setSongs(data))
-    },[refreshSignal])
-
-async function handleDelete(id){
-    await deleteSong(id)
-    setSongs(songs.filter((song)=>song.id!==id))
-}
- return (
-    <ul className="song-management-list">
-        {songs.map((song)=>(
-            <li key ={song.id}>
-                <DraggableSongTitle song={song} />
-            <button onClick={()=> onEdit(song)}>Edit</button>
-            <button onClick={()=> handleDelete(song.id)}>Delete</button>
-            </li>
+function SongList({ songs, onEdit, onDelete }) {
+  return (
+    <SortableContext items={songs.map((s) => `song-${s.id}`)} strategy={verticalListSortingStrategy}>
+      <ul className="song-management-list">
+        {songs.map((song) => (
+          <SortableSongItem key={song.id} song={song} onEdit={onEdit} onDelete={onDelete} />
         ))}
-    </ul>
-)
+      </ul>
+    </SortableContext>
+  )
 }
 
 export default SongList

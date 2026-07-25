@@ -1,9 +1,10 @@
 // frontend/src/utils/timeGrid.js
-export const SLOT_MINUTES = 15
+export const SLOT_MINUTES = 5
+export const LABEL_EVERY_N_SLOTS = 3   // labels shown every 3 slots = every 15 min
 export const START_HOUR = 17
 export const START_MINUTE = 30   // 5:30 PM
-export const TOTAL_SLOTS = 10    // 5:30 PM – 8:00 PM
-export const ROW_HEIGHT = 40      // px — must match .time-slot's min-height in App.css
+export const TOTAL_SLOTS = 30    // 5:30 PM – 8:00 PM, in 5-min increments
+export const ROW_HEIGHT = 16     // px — must match .time-slot's height in App.css
 
 const START_TOTAL_MINUTES = START_HOUR * 60 + START_MINUTE
 

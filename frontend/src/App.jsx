@@ -1,14 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
 import { DndContext } from '@dnd-kit/core'
+import { arrayMove } from '@dnd-kit/sortable'
 import { toPng } from 'html-to-image'
 import './App.css'
 import SongList from './components/SongList'
 import SongForm from './components/SongForm'
 import TimeSlotGrid from './components/TimeSlotGrid'
 import {
+  getSongs,
+  updateSong,
+  deleteSong,
   getRehearsalPlans,
   createRehearsalPlan,
   getRehearsalPlan,
+  updateRehearsalPlan,
   addPlanItem,
   updatePlanItem,
   deletePlanItem,
@@ -18,11 +23,22 @@ import { slotIndexToTime, timeToSlotIndex } from './utils/timeGrid'
 function App() {
   const [editingSong, setEditingSong] = useState(null)
   const [refreshSignal, setRefreshSignal] = useState(0)
+  const [songs, setSongs] = useState([])
   const [activePlan, setActivePlan] = useState(null)
   const planExportRef = useRef(null)
 
   function handleSaved() {
     setEditingSong(null)
+    setRefreshSignal((prev) => prev + 1)
+  }
+
+  // Fetch the song library whenever something changes it (create/update/delete)
+  useEffect(() => {
+    getSongs().then(setSongs)
+  }, [refreshSignal])
+
+  async function handleDeleteSong(id) {
+    await deleteSong(id)
     setRefreshSignal((prev) => prev + 1)
   }
 
@@ -57,8 +73,27 @@ function App() {
 
   async function handleDragEnd(event) {
     const { active, over } = event
-    if (!over) return // dropped outside any valid slot
+    if (!over) return // dropped outside any valid target
 
+    const activeIsSong = typeof active.id === 'string' && active.id.startsWith('song-')
+    const overIsSong = typeof over.id === 'string' && over.id.startsWith('song-')
+
+    // Case 1: reordering the song library sidebar itself
+    if (activeIsSong && overIsSong) {
+      if (active.id === over.id) return // dropped back on itself, no-op
+
+      const oldIndex = songs.findIndex((s) => `song-${s.id}` === active.id)
+      const newIndex = songs.findIndex((s) => `song-${s.id}` === over.id)
+      const reordered = arrayMove(songs, oldIndex, newIndex)
+
+      setSongs(reordered) // optimistic UI update, feels instant
+      // Persist order for the whole list — simpler and safer than only
+      // updating the two swapped items, since arrayMove shifts everything between them
+      await Promise.all(reordered.map((song, index) => updateSong(song.id, { order_index: index })))
+      return
+    }
+
+    // Case 2: dropping a song or a placed block onto the rehearsal plan grid
     const slotIndex = over.data.current?.slotIndex
     if (slotIndex === undefined) return
 
@@ -124,6 +159,11 @@ function App() {
     link.click()
   }
 
+  async function handleDateChange(newDate) {
+    await updateRehearsalPlan(activePlan.id, { date: newDate })
+    refreshActivePlan()
+  }
+
   return (
     <DndContext onDragEnd={handleDragEnd}>
       <header className="app-header"><h1>Kumpas</h1></header>
@@ -131,14 +171,23 @@ function App() {
         <div className="library-column">
           <h2>Song Library</h2>
           <SongForm existingSong={editingSong} onSaved={handleSaved} />
-          <SongList onEdit={setEditingSong} refreshSignal={refreshSignal} />
+          <SongList songs={songs} onEdit={setEditingSong} onDelete={handleDeleteSong} />
         </div>
 
         <div className="builder-column">
-          <h2>Rehearsal Plan</h2>
+          <div className="builder-column-header">
+            {activePlan && (
+              <input
+                type="date"
+                className="plan-date-input"
+                value={activePlan.date}
+                onChange={(e) => handleDateChange(e.target.value)}
+              />
+            )}
+            <h2>Rehearsal Plan</h2>
+          </div>
           {activePlan ? (
             <>
-              <button onClick={handleExportPlan}>Export as Image</button>
               <div ref={planExportRef}>
                 <TimeSlotGrid
                   items={activePlan.items}
@@ -146,6 +195,7 @@ function App() {
                   onResizeItem={handleResizeItem}
                 />
               </div>
+              <button onClick={handleExportPlan}>Export as Image</button>
             </>
           ) : (
             <p>Loading plan...</p>

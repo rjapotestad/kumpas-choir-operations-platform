@@ -51,6 +51,15 @@ export async function createRehearsalPlan(plan) {
   return response.json()
 }
 
+export async function updateRehearsalPlan(id, updates) {
+  const response = await fetch(`${BASE_URL}/rehearsal-plans/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  })
+  return response.json()
+}
+
 export async function addPlanItem(planId, item) {
   const response = await fetch(`${BASE_URL}/rehearsal-plans/${planId}/items`, {
     method: 'POST',

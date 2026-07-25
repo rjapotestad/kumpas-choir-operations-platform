@@ -8,3 +8,4 @@ class Song(Base):
     title = Column(String, nullable=False)
     composer_arranger = Column(String, nullable=True)
     notes = Column(String, nullable=True)
+    order_index = Column(Integer, nullable=True)  # nullable so existing rows aren't broken; NULLs sort last, by id, until first reorder

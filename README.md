@@ -7,7 +7,7 @@ This project is built in **slices** — each one a thin, shippable vertical cut 
 ## Tech Stack
 
 - **Backend**: FastAPI + SQLAlchemy + PostgreSQL, migrations via Alembic
-- **Frontend**: React (Vite), drag-and-drop via [dnd-kit](https://docs.dndkit.com/), image export via [html-to-image](https://github.com/bubkoo/html-to-image)
+- **Frontend**: React (Vite), drag-and-drop and sortable lists via [dnd-kit](https://docs.dndkit.com/), image export via [html-to-image](https://github.com/bubkoo/html-to-image)
 - **Testing**: pytest + FastAPI's `TestClient`
 
 ## Project Structure
@@ -92,17 +92,19 @@ Always review the generated migration file before applying it — autogenerate c
 ## Features
 
 ### Song Library
-Manage the choir's active song list — add, edit, delete. Serves as the source list for the rehearsal plan builder below; updates there reflect instantly, no manual refresh needed.
+Manage the choir's active song list — add, edit, delete, and drag to reorder. Updates reflect instantly in the rehearsal plan builder below, no manual refresh needed. Edit/Delete actions appear on hover to keep the list visually clean.
 
 ### Rehearsal Plan Builder
 A visual, drag-and-drop replacement for planning rehearsals in a spreadsheet.
 
-- **Time grid**: fixed 15-minute slots, 5:30 PM – 8:00 PM by default (`frontend/src/utils/timeGrid.js`)
+- **Editable date**: the rehearsal date sits beside the "Rehearsal Plan" title and can be changed directly; persists immediately
+- **Time grid**: 5:30 PM – 8:00 PM by default (`frontend/src/utils/timeGrid.js`), with dragging/resizing snapping to 5-minute increments while the visible time labels only mark every 15 minutes, matching Google Calendar's own convention of sparse labels over a finer grid
 - **Drag a song from the library onto a slot** to place it in the plan
 - **Drag a placed block to a different slot** to move it; dropping onto an occupied slot replaces what's there
-- **Resize** a placed block by dragging the thin handle at its bottom edge — stretches/shrinks across multiple 15-minute rows, updating its duration live as you drag
+- **Resize** a placed block by dragging the thin handle at its bottom edge — stretches/shrinks in 5-minute increments, updating its duration live as you drag
+- **Notes** on a song (if any) display on its block beneath the title, centered and adapting as the block resizes
 - **Remove** a block with the × button
-- **Export** the current plan as a PNG image via the "Export as Image" button — downloads a snapshot of just the timeline (not the song library panel), named after the plan's date
+- **Export** the current plan as a PNG image via the "Export as Image" button below the grid — downloads a snapshot of just the timeline (not the song library panel), named after the plan's date
 - Everything persists to Postgres immediately — no separate "save" step, and the arrangement survives a page reload
 - Currently works against a single active plan (auto-created on first load); a plan-picker for managing multiple rehearsal dates is a planned future addition
 
@@ -127,13 +129,13 @@ Returns basic app metadata (name, version, status).
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/songs` | List all songs |
+| `GET` | `/songs` | List all songs, ordered by `order_index` (falls back to `id` for unordered songs) |
 | `GET` | `/songs/{id}` | Get a single song |
 | `POST` | `/songs` | Create a song |
 | `PUT` | `/songs/{id}` | Update a song (any subset of fields) |
 | `DELETE` | `/songs/{id}` | Delete a song |
 
-**Song fields**: `title` (required), `composer_arranger` (optional), `notes` (optional)
+**Song fields**: `title` (required), `composer_arranger` (optional), `notes` (optional), `order_index` (optional, used for sidebar drag-reordering)
 
 Example — create a song:
 ```json
@@ -154,6 +156,7 @@ A rehearsal plan is a date with an ordered set of time-boxed song blocks (items)
 | `GET` | `/rehearsal-plans` | List all plans (each includes its items) |
 | `GET` | `/rehearsal-plans/{id}` | Get a single plan, including its items |
 | `POST` | `/rehearsal-plans` | Create a plan |
+| `PUT` | `/rehearsal-plans/{id}` | Update a plan's own fields (date/title/notes) |
 | `DELETE` | `/rehearsal-plans/{id}` | Delete a plan (cascades to its items) |
 | `POST` | `/rehearsal-plans/{id}/items` | Add a song block to a plan |
 | `PUT` | `/rehearsal-plans/{id}/items/{item_id}` | Update an item's time/duration/order |

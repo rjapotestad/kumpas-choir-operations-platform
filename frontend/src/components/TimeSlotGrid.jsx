@@ -4,6 +4,7 @@ import {
   TOTAL_SLOTS,
   ROW_HEIGHT,
   SLOT_MINUTES,
+  LABEL_EVERY_N_SLOTS,
   slotIndexToTime,
   timeToSlotIndex,
   durationToSlotSpan,
@@ -37,16 +38,22 @@ function DroppableSlot({ index }) {
 
 function TimeGutter() {
   return (
-    <div className="time-gutter">
-      {Array.from({ length: TOTAL_SLOTS + 1 }, (_, index) => (
-        <div
-          key={index}
-          className="time-gutter-row"
-          style={index === TOTAL_SLOTS ? { opacity: 0.55 } : undefined}
-        >
-          <span className="time-label">{slotIndexToTime(index)}</span>
+    <div className="time-gutter" style={{ position: 'relative' }}>
+      {Array.from({ length: TOTAL_SLOTS }, (_, index) => (
+        <div key={index} className="time-gutter-row">
+          {index % LABEL_EVERY_N_SLOTS === 0 && (
+            <span className="time-label">{slotIndexToTime(index)}</span>
+          )}
         </div>
       ))}
+      {/* Boundary label marking the end of the window — sits right on the
+          grid's last gridline, not a real row/slot of its own */}
+      <span
+        className="time-label time-label-boundary"
+        style={{ position: 'absolute', top: TOTAL_SLOTS * ROW_HEIGHT, right: 0 }}
+      >
+        {slotIndexToTime(TOTAL_SLOTS)}
+      </span>
     </div>
   )
 }
@@ -111,17 +118,22 @@ function PlacedItemOverlay({ item, onRemoveItem, onResizeItem }) {
 
   return (
     <div className="song-block" style={style} ref={setNodeRef} {...listeners} {...attributes}>
-      <span className="song-block-title">
-        {item.song.title}
-        <span className="duration-label"> {span * SLOT_MINUTES} min</span>
-      </span>
-      <button
-        onClick={() => onRemoveItem(item.id)}
-        onPointerDown={(e) => e.stopPropagation()}
-        style={{ background: color.buttonBg, color: color.text }}
-      >
-        ×
-      </button>
+      <div className="song-block-content">
+        <div className="song-block-header">
+          <span className="song-block-title">
+            {item.song.title}
+            <span className="duration-label"> {span * SLOT_MINUTES} min</span>
+          </span>
+          <button
+            onClick={() => onRemoveItem(item.id)}
+            onPointerDown={(e) => e.stopPropagation()}
+            style={{ background: color.buttonBg, color: color.text }}
+          >
+            ×
+          </button>
+        </div>
+        {item.song.notes && <div className="song-block-notes">{item.song.notes}</div>}
+      </div>
       <div className="resize-handle" onPointerDown={handleResizePointerDown} />
     </div>
   )
@@ -135,9 +147,6 @@ function TimeSlotGrid({ items, onRemoveItem, onResizeItem }) {
         {Array.from({ length: TOTAL_SLOTS }, (_, index) => (
           <DroppableSlot key={index} index={index} />
         ))}
-
-        {/* Visual-only boundary row — not a real, placeable slot */}
-        <div className="time-slot" />
 
         {items.map((item) => (
           <PlacedItemOverlay

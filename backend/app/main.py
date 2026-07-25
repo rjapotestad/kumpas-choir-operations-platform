@@ -29,6 +29,7 @@ class SongUpdate(BaseModel):
     title:str|None = None
     composer_arranger:str|None = None
     notes:str|None = None
+    order_index:int|None = None
 class RehearsalPlanCreate(BaseModel):
     date: date_type
     title: str | None = None
@@ -44,6 +45,11 @@ class RehearsalPlanItemUpdate(BaseModel):
     start_time: str | None = None
     duration_minutes: int | None = None
     order_index: int | None = None
+
+class RehearsalPlanUpdate(BaseModel):
+    date: date_type | None = None
+    title: str | None = None
+    notes: str | None = None
 
 # Response schemas — reading these fields (rather than passively returning
 # the raw SQLAlchemy object) is what actually triggers SQLAlchemy to load
@@ -74,7 +80,8 @@ class RehearsalPlanOut(BaseModel):
 #Print all songs
 @app.get("/songs")
 async def get_songs_db(db: Session = Depends(get_db)):
-    return db.query(SongModel).all()
+    from sqlalchemy import nullslast
+    return db.query(SongModel).order_by(nullslast(SongModel.order_index), SongModel.id).all()
 #Print songs based on ID
 @app.get("/songs/{id}")
 async def get_song(id:int, db: Session = Depends(get_db)):
@@ -102,6 +109,8 @@ async def update_song(id:int, updates: SongUpdate, db: Session = Depends(get_db)
         song.composer_arranger = updates.composer_arranger
     if updates.notes:
         song.notes = updates.notes
+    if updates.order_index is not None:
+        song.order_index = updates.order_index
     db.commit()
     db.refresh(song)
     return song
@@ -135,6 +144,24 @@ async def get_rehearsal_plan(id: int, db: Session = Depends(get_db)):
     plan = db.query(RehearsalPlanModel).filter(RehearsalPlanModel.id == id).first()
     if not plan:
         raise HTTPException(status_code=404, detail="rehearsal plan not found")
+    return plan
+
+#Update a rehearsal plan's own fields (date/title/notes)
+@app.put("/rehearsal-plans/{id}", response_model=RehearsalPlanOut)
+async def update_rehearsal_plan(id: int, updates: RehearsalPlanUpdate, db: Session = Depends(get_db)):
+    plan = db.query(RehearsalPlanModel).filter(RehearsalPlanModel.id == id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="rehearsal plan not found")
+
+    if updates.date is not None:
+        plan.date = updates.date
+    if updates.title is not None:
+        plan.title = updates.title
+    if updates.notes is not None:
+        plan.notes = updates.notes
+
+    db.commit()
+    db.refresh(plan)
     return plan
 
 #Delete a rehearsal plan (and its items, via cascade)
