@@ -7,7 +7,7 @@ This project is built in **slices** — each one a thin, shippable vertical cut 
 ## Tech Stack
 
 - **Backend**: FastAPI + SQLAlchemy + PostgreSQL, migrations via Alembic
-- **Frontend**: React (Vite)
+- **Frontend**: React (Vite), drag-and-drop via [dnd-kit](https://docs.dndkit.com/)
 - **Testing**: pytest + FastAPI's `TestClient`
 
 ## Project Structure
@@ -88,6 +88,22 @@ alembic revision --autogenerate -m "describe the change"
 alembic upgrade head
 ```
 Always review the generated migration file before applying it — autogenerate can produce unintended changes (e.g. dropping a table that simply isn't imported into `env.py` yet).
+
+## Features
+
+### Song Library
+Manage the choir's active song list — add, edit, delete. Serves as the source list for the rehearsal plan builder below; updates there reflect instantly, no manual refresh needed.
+
+### Rehearsal Plan Builder
+A visual, drag-and-drop replacement for planning rehearsals in a spreadsheet.
+
+- **Time grid**: fixed 15-minute slots, 5:30 PM – 8:00 PM by default (`frontend/src/utils/timeGrid.js`)
+- **Drag a song from the library onto a slot** to place it in the plan
+- **Drag a placed block to a different slot** to move it; dropping onto an occupied slot replaces what's there
+- **Resize** a placed block by dragging the thin handle at its bottom edge — stretches/shrinks across multiple 15-minute rows, updating its duration live as you drag
+- **Remove** a block with the × button
+- Everything persists to Postgres immediately — no separate "save" step, and the arrangement survives a page reload
+- Currently works against a single active plan (auto-created on first load); a plan-picker for managing multiple rehearsal dates is a planned future addition
 
 ## API Reference
 

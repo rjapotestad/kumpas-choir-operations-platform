@@ -31,3 +31,47 @@ export async function deleteSong(id) {
   })
   return response.json()
 }
+
+export async function getRehearsalPlans() {
+  const response = await fetch(`${BASE_URL}/rehearsal-plans`)
+  return response.json()
+}
+
+export async function getRehearsalPlan(id) {
+  const response = await fetch(`${BASE_URL}/rehearsal-plans/${id}`)
+  return response.json()
+}
+
+export async function createRehearsalPlan(plan) {
+  const response = await fetch(`${BASE_URL}/rehearsal-plans`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(plan),
+  })
+  return response.json()
+}
+
+export async function addPlanItem(planId, item) {
+  const response = await fetch(`${BASE_URL}/rehearsal-plans/${planId}/items`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(item),
+  })
+  return response.json()
+}
+
+export async function updatePlanItem(planId, itemId, updates) {
+  const response = await fetch(`${BASE_URL}/rehearsal-plans/${planId}/items/${itemId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  })
+  return response.json()
+}
+
+export async function deletePlanItem(planId, itemId) {
+  const response = await fetch(`${BASE_URL}/rehearsal-plans/${planId}/items/${itemId}`, {
+    method: 'DELETE',
+  })
+  return response.json()
+}
