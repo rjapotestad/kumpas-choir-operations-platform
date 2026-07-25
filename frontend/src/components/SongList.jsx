@@ -34,7 +34,7 @@ async function handleDelete(id){
     setSongs(songs.filter((song)=>song.id!==id))
 }
  return (
-    <ul>
+    <ul className="song-management-list">
         {songs.map((song)=>(
             <li key ={song.id}>
                 <DraggableSongTitle song={song} />

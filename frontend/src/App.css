@@ -1,75 +1,284 @@
-.song-library-panel {
-  min-width: 220px;
+:root {
+  --color-bg: #042a37;
+  --color-surface: #0a3a4a;
+  --color-text: #f5f5f0;
+  --color-text-muted: rgba(245, 245, 240, 0.68);
+  --color-border: rgba(245, 245, 240, 0.14);
+  --color-border-strong: rgba(245, 245, 240, 0.3);
+
+  --color-primary: #ee4004;
+  --color-primary-hover: #ff5a1f;
+  --color-accent: #f5e439;
+
+  --font-ui: "Roboto", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-pill: 999px;
 }
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+}
+
+/* ---------- Top app bar ---------- */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.app-header::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--color-primary);
+  margin-right: 0.15rem;
+}
+
+/* ---------- Overall layout ---------- */
 
 .app-layout {
   display: flex;
-  gap: 3rem;
   align-items: flex-start;
+  min-height: calc(100vh - 60px);
 }
 
 .library-column {
-  flex: 1;
-  min-width: 320px;
+  width: 320px;
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  padding: 1.5rem;
+  min-height: calc(100vh - 60px);
 }
 
 .builder-column {
   flex: 1;
-  min-width: 360px;
+  padding: 1.5rem 2rem;
 }
 
-.song-chip {
-  cursor: grab;
-  padding: 6px 10px;
-  margin-bottom: 6px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
+.library-column h2,
+.builder-column h2 {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text);
+}
+
+/* ---------- Song form ---------- */
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+form input {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  outline: none;
+}
+
+form input::placeholder {
+  color: var(--color-text-muted);
+}
+
+form input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(238, 64, 4, 0.28);
+}
+
+form button[type="submit"] {
+  align-self: flex-start;
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 0.55rem 1.3rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+form button[type="submit"]:hover {
+  background: var(--color-primary-hover);
+}
+
+/* ---------- Song library list ---------- */
+
+.song-management-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.song-management-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.3rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.song-management-list li:hover {
+  background: rgba(245, 245, 240, 0.07);
+}
+
+.song-management-list li button {
+  margin-left: auto;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.song-management-list li button:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* ---------- Rehearsal plan builder ---------- */
+
+.builder-column > button {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.builder-column > button:hover {
+  background: rgba(238, 64, 4, 0.15);
+  border-color: var(--color-primary);
 }
 
 .time-slot-grid {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+  flex: 1;
+}
+
+.time-grid-wrapper {
   display: flex;
-  flex-direction: column;
-  border: 1px solid #d1d5db;
-  min-width: 320px;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.time-gutter {
+  width: 56px;
+  flex-shrink: 0;
+}
+
+.time-gutter-row {
+  height: 40px;
+  box-sizing: border-box;
+  position: relative;
 }
 
 .time-slot {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
   height: 40px;
   box-sizing: border-box;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 4px 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.time-slot:last-child {
+  border-bottom: none;
 }
 
 .time-slot-over {
-  background: #eff6ff;
+  background: rgba(245, 228, 57, 0.22);
 }
 
 .time-label {
-  width: 56px;
-  flex-shrink: 0;
-  font-family: monospace;
-  color: #6b7280;
+  width: 100%;
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: right;
+  position: relative;
+  transform: translateY(-50%);
 }
 
 .song-block {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #dbeafe;
-  border: 1px solid #60a5fa;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 4px 10px;
   box-sizing: border-box;
   overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .song-block-title {
-  cursor: grab;
   flex: 1;
+  cursor: grab;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.duration-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.song-block button {
+  border: none;
+  border-radius: var(--radius-sm);
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .resize-handle {
@@ -82,10 +291,5 @@
 }
 
 .resize-handle:hover {
-  background: #3b82f6;
-}
-
-.duration-label {
-  font-size: 0.8em;
-  color: #4b5563;
+  background: var(--color-primary);
 }

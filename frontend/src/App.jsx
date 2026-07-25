@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { DndContext } from '@dnd-kit/core'
+import { toPng } from 'html-to-image'
 import './App.css'
 import SongList from './components/SongList'
 import SongForm from './components/SongForm'
@@ -18,6 +19,7 @@ function App() {
   const [editingSong, setEditingSong] = useState(null)
   const [refreshSignal, setRefreshSignal] = useState(0)
   const [activePlan, setActivePlan] = useState(null)
+  const planExportRef = useRef(null)
 
   function handleSaved() {
     setEditingSong(null)
@@ -26,13 +28,22 @@ function App() {
 
   // Load the active plan on first render — create one if none exists yet
   useEffect(() => {
+    function getLocalDateString() {
+      // toISOString() converts to UTC, which can land on the wrong calendar
+      // day depending on timezone — build the string from local date parts instead
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
     async function loadOrCreatePlan() {
       const plans = await getRehearsalPlans()
       if (plans.length > 0) {
         setActivePlan(plans[0])
       } else {
-        const today = new Date().toISOString().split('T')[0]
-        const newPlan = await createRehearsalPlan({ date: today, title: 'Untitled Rehearsal' })
+        const newPlan = await createRehearsalPlan({ date: getLocalDateString(), title: 'Untitled Rehearsal' })
         setActivePlan(newPlan)
       }
     }
@@ -103,23 +114,39 @@ function App() {
     refreshActivePlan()
   }
 
+  async function handleExportPlan() {
+    if (!planExportRef.current) return
+    const dataUrl = await toPng(planExportRef.current, { backgroundColor: '#ffffff' })
+
+    const link = document.createElement('a')
+    link.download = `rehearsal-plan-${activePlan.date}.png`
+    link.href = dataUrl
+    link.click()
+  }
+
   return (
     <DndContext onDragEnd={handleDragEnd}>
+      <header className="app-header"><h1>Kumpas</h1></header>
       <div className="app-layout">
         <div className="library-column">
-          <h1>Kumpas — Song Library</h1>
+          <h2>Song Library</h2>
           <SongForm existingSong={editingSong} onSaved={handleSaved} />
           <SongList onEdit={setEditingSong} refreshSignal={refreshSignal} />
         </div>
 
         <div className="builder-column">
-          <h1>Rehearsal Plan Builder</h1>
+          <h2>Rehearsal Plan</h2>
           {activePlan ? (
-            <TimeSlotGrid
-              items={activePlan.items}
-              onRemoveItem={handleRemoveItem}
-              onResizeItem={handleResizeItem}
-            />
+            <>
+              <button onClick={handleExportPlan}>Export as Image</button>
+              <div ref={planExportRef}>
+                <TimeSlotGrid
+                  items={activePlan.items}
+                  onRemoveItem={handleRemoveItem}
+                  onResizeItem={handleResizeItem}
+                />
+              </div>
+            </>
           ) : (
             <p>Loading plan...</p>
           )}

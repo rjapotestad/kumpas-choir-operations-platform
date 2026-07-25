@@ -7,7 +7,7 @@ This project is built in **slices** — each one a thin, shippable vertical cut 
 ## Tech Stack
 
 - **Backend**: FastAPI + SQLAlchemy + PostgreSQL, migrations via Alembic
-- **Frontend**: React (Vite), drag-and-drop via [dnd-kit](https://docs.dndkit.com/)
+- **Frontend**: React (Vite), drag-and-drop via [dnd-kit](https://docs.dndkit.com/), image export via [html-to-image](https://github.com/bubkoo/html-to-image)
 - **Testing**: pytest + FastAPI's `TestClient`
 
 ## Project Structure
@@ -102,8 +102,21 @@ A visual, drag-and-drop replacement for planning rehearsals in a spreadsheet.
 - **Drag a placed block to a different slot** to move it; dropping onto an occupied slot replaces what's there
 - **Resize** a placed block by dragging the thin handle at its bottom edge — stretches/shrinks across multiple 15-minute rows, updating its duration live as you drag
 - **Remove** a block with the × button
+- **Export** the current plan as a PNG image via the "Export as Image" button — downloads a snapshot of just the timeline (not the song library panel), named after the plan's date
 - Everything persists to Postgres immediately — no separate "save" step, and the arrangement survives a page reload
 - Currently works against a single active plan (auto-created on first load); a plan-picker for managing multiple rehearsal dates is a planned future addition
+
+### Design
+A dark, Calendar-inspired UI built on a four-color brand palette:
+
+| Color | Hex | Role |
+|---|---|---|
+| Prussia | `#042a37` | Page/surface background, primary text (light-on-dark) |
+| Vermilion | `#EE4004` | Primary interactive accent — buttons, focus states, resize handle |
+| Olivine | `#53863b` | Default song-block color |
+| Sunrise | `#F5E439` | Drag-over highlight only, used sparingly |
+
+Song blocks cycle through a small palette derived from these four colors (each brand hue plus a tint), keyed to the block's own database ID so a song's color stays consistent across reloads. Typeface is Roboto for UI text and Roboto Mono for time labels, matching Google Calendar's own type system.
 
 ## API Reference
 
