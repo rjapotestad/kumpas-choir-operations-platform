@@ -6,11 +6,19 @@ from app.models.song import Song as SongModel
 from app.models.rehearsal_plan import RehearsalPlan as RehearsalPlanModel, RehearsalPlanItem as RehearsalPlanItemModel
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date as date_type
+import os
 
 app = FastAPI()
+
+# CORS_ORIGINS is a comma-separated list of allowed frontend URLs, set via
+# environment variable so production origins (Vercel/Netlify) don't need to
+# be hardcoded here. Falls back to the local Vite dev server if unset.
+cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+allowed_origins = [origin.strip() for origin in cors_origins_env.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

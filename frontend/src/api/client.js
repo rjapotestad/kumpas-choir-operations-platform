@@ -1,4 +1,7 @@
-const BASE_URL = 'http://localhost:8000'
+// In production, set VITE_API_URL in your hosting platform's environment
+// variables (e.g. Vercel project settings) to your deployed backend's URL.
+// Locally, it falls back to your dev backend.
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export async function getAppInfo() {
   const response = await fetch(`${BASE_URL}/appinfo`)

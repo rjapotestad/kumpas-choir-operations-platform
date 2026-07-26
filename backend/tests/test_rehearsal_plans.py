@@ -94,3 +94,26 @@ def test_deleting_plan_does_not_orphan_items(client):
         json={"order_index": 1},
     )
     assert orphan_check.status_code == 404
+
+
+def test_list_rehearsal_plans(client):
+    client.post("/rehearsal-plans", json={"date": "2026-09-01"})
+    response = client.get("/rehearsal-plans")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+    assert len(response.json()) >= 1
+
+
+def test_update_rehearsal_plan_date(client):
+    plan = client.post("/rehearsal-plans", json={"date": "2026-09-05", "title": "Original"}).json()
+
+    response = client.put(f"/rehearsal-plans/{plan['id']}", json={"date": "2026-09-12"})
+    assert response.status_code == 200
+    assert response.json()["date"] == "2026-09-12"
+    # confirm the untouched field (title) wasn't wiped out by the partial update
+    assert response.json()["title"] == "Original"
+
+
+def test_update_rehearsal_plan_not_found(client):
+    response = client.put("/rehearsal-plans/9999", json={"date": "2026-09-12"})
+    assert response.status_code == 404
