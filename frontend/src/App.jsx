@@ -24,8 +24,11 @@ function App() {
   const [editingSong, setEditingSong] = useState(null)
   const [refreshSignal, setRefreshSignal] = useState(0)
   const [songs, setSongs] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
   const [activePlan, setActivePlan] = useState(null)
   const planExportRef = useRef(null)
+  const gridSectionRef = useRef(null)
+  const [libraryHeight, setLibraryHeight] = useState(null)
 
   function handleSaved() {
     setEditingSong(null)
@@ -164,30 +167,52 @@ function App() {
     refreshActivePlan()
   }
 
+  // Measure the actual rendered height of the header+grid section, so the
+  // library sidebar can match it exactly (extend down to the grid's 8PM
+  // line) rather than guessing a pixel value that drifts if the grid's
+  // dimensions ever change.
+  useEffect(() => {
+    if (!gridSectionRef.current) return
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setLibraryHeight(entry.contentRect.height)
+      }
+    })
+    observer.observe(gridSectionRef.current)
+    return () => observer.disconnect()
+  }, [activePlan])
+
   return (
     <DndContext onDragEnd={handleDragEnd}>
       <header className="app-header"><h1>Kumpas</h1></header>
       <div className="app-layout">
-        <div className="library-column">
+        <div className="library-column" style={{ height: libraryHeight ? `${libraryHeight}px` : undefined }}>
           <h2>Song Library</h2>
           <SongForm existingSong={editingSong} onSaved={handleSaved} />
-          <SongList songs={songs} onEdit={setEditingSong} onDelete={handleDeleteSong} />
+          <input
+            type="text"
+            className="song-search-input"
+            placeholder="Search songs..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <SongList songs={songs} onEdit={setEditingSong} onDelete={handleDeleteSong} searchQuery={searchQuery} />
         </div>
 
         <div className="builder-column">
-          <div className="builder-column-header">
-            {activePlan && (
-              <input
-                type="date"
-                className="plan-date-input"
-                value={activePlan.date}
-                onChange={(e) => handleDateChange(e.target.value)}
-              />
-            )}
-            <h2>Rehearsal Plan</h2>
-          </div>
-          {activePlan ? (
-            <>
+          <div ref={gridSectionRef}>
+            <div className="builder-column-header">
+              {activePlan && (
+                <input
+                  type="date"
+                  className="plan-date-input"
+                  value={activePlan.date}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                />
+              )}
+              <h2>Rehearsal Plan</h2>
+            </div>
+            {activePlan ? (
               <div ref={planExportRef}>
                 <TimeSlotGrid
                   items={activePlan.items}
@@ -195,11 +220,11 @@ function App() {
                   onResizeItem={handleResizeItem}
                 />
               </div>
-              <button onClick={handleExportPlan}>Export as Image</button>
-            </>
-          ) : (
-            <p>Loading plan...</p>
-          )}
+            ) : (
+              <p>Loading plan...</p>
+            )}
+          </div>
+          {activePlan && <button onClick={handleExportPlan}>Export as Image</button>}
         </div>
       </div>
     </DndContext>

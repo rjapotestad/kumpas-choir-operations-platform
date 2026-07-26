@@ -80,6 +80,10 @@ From `backend/`:
 pytest
 ```
 
+### Quick Start (Windows)
+
+Once both setups above are done once, `start-kumpas.bat` (repo root) starts both servers and opens the app in your browser — just double-click it. Requires PostgreSQL to be running as a background service (default behavior after a standard install).
+
 ### Running Migrations
 
 Whenever a model changes:
@@ -92,7 +96,7 @@ Always review the generated migration file before applying it — autogenerate c
 ## Features
 
 ### Song Library
-Manage the choir's active song list — add, edit, delete, and drag to reorder. Updates reflect instantly in the rehearsal plan builder below, no manual refresh needed. Edit/Delete actions appear on hover to keep the list visually clean.
+Manage the choir's active song list — add, edit, delete, search, and drag to reorder. Updates reflect instantly in the rehearsal plan builder below, no manual refresh needed. Edit/Delete actions appear on hover to keep the list visually clean. A search box filters by title/composer as you type; the underlying order is preserved under the hood, so reordering still works correctly even while a search filter is active. The sidebar's height matches the rehearsal grid's rendered height exactly (measured, not guessed), and the song list scrolls internally once it's too long to fit — the page itself never grows past that.
 
 ### Rehearsal Plan Builder
 A visual, drag-and-drop replacement for planning rehearsals in a spreadsheet.
