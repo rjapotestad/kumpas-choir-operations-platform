@@ -32,6 +32,10 @@ export async function deleteSong(id) {
   const response = await fetch(`${BASE_URL}/songs/${id}`, {
     method: 'DELETE',
   })
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}))
+    throw new Error(errorBody.detail || `Failed to delete song (status ${response.status})`)
+  }
   return response.json()
 }
 

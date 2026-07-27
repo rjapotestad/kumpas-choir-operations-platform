@@ -42,6 +42,8 @@ class RehearsalPlanCreate(BaseModel):
     date: date_type
     title: str | None = None
     notes: str | None = None
+    start_time: str = "17:30"
+    end_time: str = "20:00"
 
 class RehearsalPlanItemCreate(BaseModel):
     song_id: int
@@ -58,6 +60,8 @@ class RehearsalPlanUpdate(BaseModel):
     date: date_type | None = None
     title: str | None = None
     notes: str | None = None
+    start_time: str | None = None
+    end_time: str | None = None
 
 # Response schemas — reading these fields (rather than passively returning
 # the raw SQLAlchemy object) is what actually triggers SQLAlchemy to load
@@ -83,6 +87,8 @@ class RehearsalPlanOut(BaseModel):
     date: date_type
     title: str | None = None
     notes: str | None = None
+    start_time: str
+    end_time: str
     items: list[RehearsalPlanItemOut] = []
     model_config = {"from_attributes": True}
 #Print all songs
@@ -113,10 +119,10 @@ async def update_song(id:int, updates: SongUpdate, db: Session = Depends(get_db)
         raise HTTPException(status_code=404, detail="song not found")
     if updates.title:
         song.title = updates.title
-    if updates.composer_arranger:
-        song.composer_arranger = updates.composer_arranger
-    if updates.notes:
-        song.notes = updates.notes
+    if updates.composer_arranger is not None:
+        song.composer_arranger = updates.composer_arranger or None
+    if updates.notes is not None:
+        song.notes = updates.notes or None
     if updates.order_index is not None:
         song.order_index = updates.order_index
     db.commit()
@@ -125,11 +131,19 @@ async def update_song(id:int, updates: SongUpdate, db: Session = Depends(get_db)
 #Delete song
 @app.delete("/songs/{id}")
 async def delete_song(id:int, db: Session = Depends(get_db)):
+    from sqlalchemy.exc import IntegrityError
     song = db.query(SongModel).filter(SongModel.id == id).first()
     if not song:
         raise HTTPException(status_code=404, detail="song not found")
-    db.delete(song)
-    db.commit()
+    try:
+        db.delete(song)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot delete this song — it is currently placed in one or more rehearsal plans. Remove it from the plan first.",
+        )
     return {"Result":f"song {id} deleted"}
 
 #Create a rehearsal plan
@@ -167,6 +181,10 @@ async def update_rehearsal_plan(id: int, updates: RehearsalPlanUpdate, db: Sessi
         plan.title = updates.title
     if updates.notes is not None:
         plan.notes = updates.notes
+    if updates.start_time is not None:
+        plan.start_time = updates.start_time
+    if updates.end_time is not None:
+        plan.end_time = updates.end_time
 
     db.commit()
     db.refresh(plan)

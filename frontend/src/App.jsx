@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { DndContext } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
-import { toPng } from 'html-to-image'
 import './App.css'
 import SongList from './components/SongList'
 import SongForm from './components/SongForm'
 import TimeSlotGrid from './components/TimeSlotGrid'
+import TimePicker from './components/TimePicker'
 import {
   getSongs,
   updateSong,
@@ -26,13 +26,16 @@ function App() {
   const [songs, setSongs] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [activePlan, setActivePlan] = useState(null)
-  const planExportRef = useRef(null)
   const gridSectionRef = useRef(null)
   const [libraryHeight, setLibraryHeight] = useState(null)
 
   function handleSaved() {
     setEditingSong(null)
     setRefreshSignal((prev) => prev + 1)
+    // A song's title/composer/notes may have changed — if it's currently
+    // placed on the plan, the block showing it needs fresh data too,
+    // otherwise it keeps showing stale info until a full page reload
+    if (activePlan) refreshActivePlan()
   }
 
   // Fetch the song library whenever something changes it (create/update/delete)
@@ -41,8 +44,12 @@ function App() {
   }, [refreshSignal])
 
   async function handleDeleteSong(id) {
-    await deleteSong(id)
-    setRefreshSignal((prev) => prev + 1)
+    try {
+      await deleteSong(id)
+      setRefreshSignal((prev) => prev + 1)
+    } catch (error) {
+      alert(error.message)
+    }
   }
 
   // Load the active plan on first render — create one if none exists yet
@@ -108,7 +115,7 @@ function App() {
     const existingItem = activePlan.items.find(
       (item) =>
         item.start_time &&
-        timeToSlotIndex(item.start_time) === slotIndex &&
+        timeToSlotIndex(item.start_time, activePlan.start_time) === slotIndex &&
         item.id !== draggedItem?.id
     )
 
@@ -119,20 +126,20 @@ function App() {
       }
       await addPlanItem(activePlan.id, {
         song_id: draggedSong.id,
-        start_time: slotIndexToTime(slotIndex),
+        start_time: slotIndexToTime(slotIndex, activePlan.start_time),
         duration_minutes: 15,
         order_index: slotIndex,
       })
     } else if (draggedItem) {
       // Dragged an already-placed block to a new slot
-      const currentSlot = timeToSlotIndex(draggedItem.start_time)
+      const currentSlot = timeToSlotIndex(draggedItem.start_time, activePlan.start_time)
       if (currentSlot === slotIndex) return // dropped back on itself, no-op
 
       if (existingItem) {
         await deletePlanItem(activePlan.id, existingItem.id)
       }
       await updatePlanItem(activePlan.id, draggedItem.id, {
-        start_time: slotIndexToTime(slotIndex),
+        start_time: slotIndexToTime(slotIndex, activePlan.start_time),
         order_index: slotIndex,
       })
     } else {
@@ -152,18 +159,18 @@ function App() {
     refreshActivePlan()
   }
 
-  async function handleExportPlan() {
-    if (!planExportRef.current) return
-    const dataUrl = await toPng(planExportRef.current, { backgroundColor: '#ffffff' })
-
-    const link = document.createElement('a')
-    link.download = `rehearsal-plan-${activePlan.date}.png`
-    link.href = dataUrl
-    link.click()
-  }
-
   async function handleDateChange(newDate) {
     await updateRehearsalPlan(activePlan.id, { date: newDate })
+    refreshActivePlan()
+  }
+
+  async function handleStartTimeChange(newStartTime) {
+    await updateRehearsalPlan(activePlan.id, { start_time: newStartTime })
+    refreshActivePlan()
+  }
+
+  async function handleEndTimeChange(newEndTime) {
+    await updateRehearsalPlan(activePlan.id, { end_time: newEndTime })
     refreshActivePlan()
   }
 
@@ -202,29 +209,33 @@ function App() {
         <div className="builder-column">
           <div ref={gridSectionRef}>
             <div className="builder-column-header">
-              {activePlan && (
-                <input
-                  type="date"
-                  className="plan-date-input"
-                  value={activePlan.date}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                />
-              )}
               <h2>Rehearsal Plan</h2>
+              {activePlan && (
+                <div className="builder-column-controls">
+                  <input
+                    type="date"
+                    className="plan-date-input"
+                    value={activePlan.date}
+                    onChange={(e) => handleDateChange(e.target.value)}
+                  />
+                  <TimePicker value={activePlan.start_time} onChange={handleStartTimeChange} />
+                  <span className="time-range-separator">to</span>
+                  <TimePicker value={activePlan.end_time} onChange={handleEndTimeChange} />
+                </div>
+              )}
             </div>
             {activePlan ? (
-              <div ref={planExportRef}>
-                <TimeSlotGrid
-                  items={activePlan.items}
-                  onRemoveItem={handleRemoveItem}
-                  onResizeItem={handleResizeItem}
-                />
-              </div>
+              <TimeSlotGrid
+                items={activePlan.items}
+                onRemoveItem={handleRemoveItem}
+                onResizeItem={handleResizeItem}
+                startTime={activePlan.start_time}
+                endTime={activePlan.end_time}
+              />
             ) : (
               <p>Loading plan...</p>
             )}
           </div>
-          {activePlan && <button onClick={handleExportPlan}>Export as Image</button>}
         </div>
       </div>
     </DndContext>

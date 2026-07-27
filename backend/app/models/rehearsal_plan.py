@@ -9,6 +9,8 @@ class RehearsalPlan(Base):
     date = Column(Date, nullable=False)
     title = Column(String, nullable=True)
     notes = Column(String, nullable=True)
+    start_time = Column(String, nullable=True, default="17:30")  # "HH:MM", defines the grid's window
+    end_time = Column(String, nullable=True, default="20:00")
 
     items = relationship("RehearsalPlanItem", back_populates="plan", cascade="all, delete-orphan")
 

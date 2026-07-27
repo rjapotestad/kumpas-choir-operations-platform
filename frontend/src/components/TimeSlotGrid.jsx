@@ -1,13 +1,14 @@
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { useState } from 'react'
 import {
-  TOTAL_SLOTS,
+  getTotalSlots,
   ROW_HEIGHT,
   SLOT_MINUTES,
   LABEL_EVERY_N_SLOTS,
   slotIndexToTime,
   timeToSlotIndex,
   durationToSlotSpan,
+  formatTimeLabel,
 } from '../utils/timeGrid'
 
 // A curated on-brand palette for song blocks — the three brand accent hues
@@ -36,13 +37,13 @@ function DroppableSlot({ index }) {
   return <div ref={setNodeRef} className={`time-slot ${isOver ? 'time-slot-over' : ''}`} />
 }
 
-function TimeGutter() {
+function TimeGutter({ startTime, totalSlots }) {
   return (
     <div className="time-gutter" style={{ position: 'relative' }}>
-      {Array.from({ length: TOTAL_SLOTS }, (_, index) => (
+      {Array.from({ length: totalSlots }, (_, index) => (
         <div key={index} className="time-gutter-row">
           {index % LABEL_EVERY_N_SLOTS === 0 && (
-            <span className="time-label">{slotIndexToTime(index)}</span>
+            <span className="time-label">{formatTimeLabel(slotIndexToTime(index, startTime))}</span>
           )}
         </div>
       ))}
@@ -50,21 +51,21 @@ function TimeGutter() {
           grid's last gridline, not a real row/slot of its own */}
       <span
         className="time-label time-label-boundary"
-        style={{ position: 'absolute', top: TOTAL_SLOTS * ROW_HEIGHT, right: 0 }}
+        style={{ position: 'absolute', top: totalSlots * ROW_HEIGHT, right: 0 }}
       >
-        {slotIndexToTime(TOTAL_SLOTS)}
+        {formatTimeLabel(slotIndexToTime(totalSlots, startTime))}
       </span>
     </div>
   )
 }
 
-function PlacedItemOverlay({ item, onRemoveItem, onResizeItem }) {
+function PlacedItemOverlay({ item, onRemoveItem, onResizeItem, startTime, totalSlots }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: `item-${item.id}`,
     data: { item },
   })
 
-  const startSlot = timeToSlotIndex(item.start_time)
+  const startSlot = timeToSlotIndex(item.start_time, startTime)
   const baseSpan = durationToSlotSpan(item.duration_minutes)
   const color = getBlockColor(item.id)
 
@@ -80,7 +81,7 @@ function PlacedItemOverlay({ item, onRemoveItem, onResizeItem }) {
     function handlePointerMove(moveEvent) {
       const deltaY = moveEvent.clientY - startY
       const deltaSlots = Math.round(deltaY / ROW_HEIGHT)
-      const maxSpan = TOTAL_SLOTS - startSlot
+      const maxSpan = totalSlots - startSlot
       const newSpan = Math.min(maxSpan, Math.max(1, baseSpan + deltaSlots))
       setPreviewSpan(newSpan)
     }
@@ -91,7 +92,7 @@ function PlacedItemOverlay({ item, onRemoveItem, onResizeItem }) {
 
       const deltaY = upEvent.clientY - startY
       const deltaSlots = Math.round(deltaY / ROW_HEIGHT)
-      const maxSpan = TOTAL_SLOTS - startSlot
+      const maxSpan = totalSlots - startSlot
       const newSpan = Math.min(maxSpan, Math.max(1, baseSpan + deltaSlots))
 
       setPreviewSpan(null)
@@ -132,6 +133,9 @@ function PlacedItemOverlay({ item, onRemoveItem, onResizeItem }) {
             ×
           </button>
         </div>
+        {item.song.composer_arranger && (
+          <div className="song-block-composer">{item.song.composer_arranger}</div>
+        )}
         {item.song.notes && <div className="song-block-notes">{item.song.notes}</div>}
       </div>
       <div className="resize-handle" onPointerDown={handleResizePointerDown} />
@@ -139,12 +143,14 @@ function PlacedItemOverlay({ item, onRemoveItem, onResizeItem }) {
   )
 }
 
-function TimeSlotGrid({ items, onRemoveItem, onResizeItem }) {
+function TimeSlotGrid({ items, onRemoveItem, onResizeItem, startTime, endTime }) {
+  const totalSlots = getTotalSlots(startTime, endTime)
+
   return (
     <div className="time-grid-wrapper">
-      <TimeGutter />
+      <TimeGutter startTime={startTime} totalSlots={totalSlots} />
       <div className="time-slot-grid" style={{ position: 'relative' }}>
-        {Array.from({ length: TOTAL_SLOTS }, (_, index) => (
+        {Array.from({ length: totalSlots }, (_, index) => (
           <DroppableSlot key={index} index={index} />
         ))}
 
@@ -154,6 +160,8 @@ function TimeSlotGrid({ items, onRemoveItem, onResizeItem }) {
             item={item}
             onRemoveItem={onRemoveItem}
             onResizeItem={onResizeItem}
+            startTime={startTime}
+            totalSlots={totalSlots}
           />
         ))}
       </div>

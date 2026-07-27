@@ -11,7 +11,7 @@ This project is built in **slices** — each one a thin, shippable vertical cut 
 ## Tech Stack
 
 - **Backend**: FastAPI + SQLAlchemy + PostgreSQL, migrations via Alembic
-- **Frontend**: React (Vite), drag-and-drop and sortable lists via [dnd-kit](https://docs.dndkit.com/), image export via [html-to-image](https://github.com/bubkoo/html-to-image)
+- **Frontend**: React (Vite), drag-and-drop and sortable lists via [dnd-kit](https://docs.dndkit.com/)
 - **Testing**: pytest + FastAPI's `TestClient`
 
 ## Project Structure
@@ -100,19 +100,18 @@ Always review the generated migration file before applying it — autogenerate c
 ## Features
 
 ### Song Library
-Manage the choir's active song list — add, edit, delete, search, and drag to reorder. Updates reflect instantly in the rehearsal plan builder below, no manual refresh needed. Edit/Delete actions appear on hover to keep the list visually clean. A search box filters by title/composer as you type; the underlying order is preserved under the hood, so reordering still works correctly even while a search filter is active. The sidebar's height matches the rehearsal grid's rendered height exactly (measured, not guessed), and the song list scrolls internally once it's too long to fit — the page itself never grows past that.
+Manage the choir's active song list — add, edit, delete, search, and drag to reorder. Updates reflect instantly in the rehearsal plan builder below, no manual refresh needed (including live edits to a song's title/composer/notes, even while it's currently placed on the plan). Edit/Delete actions appear on hover to keep the list visually clean. A search box filters by title/composer as you type; the underlying order is preserved under the hood, so reordering still works correctly even while a search filter is active. The sidebar's height matches the rehearsal grid's rendered height exactly (measured, not guessed), and the song list scrolls internally once it's too long to fit — the page itself never grows past that. Deleting a song currently placed in a rehearsal plan is blocked with a clear message, rather than failing silently.
 
 ### Rehearsal Plan Builder
 A visual, drag-and-drop replacement for planning rehearsals in a spreadsheet.
 
-- **Editable date**: the rehearsal date sits beside the "Rehearsal Plan" title and can be changed directly; persists immediately
-- **Time grid**: 5:30 PM – 8:00 PM by default (`frontend/src/utils/timeGrid.js`), with dragging/resizing snapping to 5-minute increments while the visible time labels only mark every 15 minutes, matching Google Calendar's own convention of sparse labels over a finer grid
+- **Editable date and time window**: the rehearsal date and a start/end time picker (12-hour, AM/PM) sit centered above the grid — change either and the grid regenerates its rows to match; persists immediately
+- **Time grid**: dragging/resizing snaps to 5-minute increments, while the visible time labels only mark every 15 minutes, matching Google Calendar's own convention of sparse labels over a finer grid
 - **Drag a song from the library onto a slot** to place it in the plan
 - **Drag a placed block to a different slot** to move it; dropping onto an occupied slot replaces what's there
 - **Resize** a placed block by dragging the thin handle at its bottom edge — stretches/shrinks in 5-minute increments, updating its duration live as you drag
-- **Notes** on a song (if any) display on its block beneath the title, centered and adapting as the block resizes
+- **Composer/arranger and notes** (if set on the song) display on its block beneath the title, centered and adapting as the block resizes
 - **Remove** a block with the × button
-- **Export** the current plan as a PNG image via the "Export as Image" button below the grid — downloads a snapshot of just the timeline (not the song library panel), named after the plan's date
 - Everything persists to Postgres immediately — no separate "save" step, and the arrangement survives a page reload
 - Currently works against a single active plan (auto-created on first load); a plan-picker for managing multiple rehearsal dates is a planned future addition
 
@@ -164,13 +163,13 @@ A rehearsal plan is a date with an ordered set of time-boxed song blocks (items)
 | `GET` | `/rehearsal-plans` | List all plans (each includes its items) |
 | `GET` | `/rehearsal-plans/{id}` | Get a single plan, including its items |
 | `POST` | `/rehearsal-plans` | Create a plan |
-| `PUT` | `/rehearsal-plans/{id}` | Update a plan's own fields (date/title/notes) |
+| `PUT` | `/rehearsal-plans/{id}` | Update a plan's own fields (date/title/notes/start_time/end_time) |
 | `DELETE` | `/rehearsal-plans/{id}` | Delete a plan (cascades to its items) |
 | `POST` | `/rehearsal-plans/{id}/items` | Add a song block to a plan |
 | `PUT` | `/rehearsal-plans/{id}/items/{item_id}` | Update an item's time/duration/order |
 | `DELETE` | `/rehearsal-plans/{id}/items/{item_id}` | Remove a song block from a plan |
 
-**Rehearsal Plan fields**: `date` (required, `YYYY-MM-DD`), `title` (optional), `notes` (optional)
+**Rehearsal Plan fields**: `date` (required, `YYYY-MM-DD`), `title` (optional), `notes` (optional), `start_time`/`end_time` (optional, `HH:MM` 24-hour, default `17:30`/`20:00` — defines the grid's window; the frontend displays these in 12-hour AM/PM but always sends 24-hour)
 **Rehearsal Plan Item fields**: `song_id` (required, must reference an existing song), `start_time` (optional, e.g. `"18:30"`), `duration_minutes` (optional), `order_index` (required)
 
 Example — create a plan, then add a song to it:
@@ -195,7 +194,7 @@ POST /rehearsal-plans/1/items
 
 Kumpas is developed module by module. Current focus:
 
-1. **Rehearsal Planning** — done, live (`v1.0-rehearsal-planning`) — song library, drag-and-drop rehearsal plan builder, export as image
+1. **Rehearsal Planning** — done, live (`v1.0-rehearsal-planning`) — song library, drag-and-drop rehearsal plan builder
 2. Attendance ← next
 3. Membership Management
 4. Music Library
