@@ -2,7 +2,11 @@
 
 Kumpas is a tool for choir officers to plan rehearsals, manage a song library, and (eventually) track attendance, membership, and music assets — replacing a patchwork of Google Sheets with a single purpose-built app.
 
-This project is built in **slices** — each one a thin, shippable vertical cut through the whole stack (a bit of model, a bit of API, a bit of UI), rather than building one full layer at a time. Progress is tracked via git tags (`v0.1`, `v0.2`, ...) and the [Kumpas Implementation Framework](docs/) that drives development.
+**Live**: [kumpas-choir-operations-platform.vercel.app](https://kumpas-choir-operations-platform.vercel.app) (frontend) · [kumpas-6jw2.onrender.com](https://kumpas-6jw2.onrender.com) (backend API, docs at `/docs`)
+
+> Backend runs on Render's free tier, which spins down after inactivity — the first request after a period of no traffic can take 30–60 seconds to respond while it wakes back up. Not a bug, just the free-tier tradeoff.
+
+This project is built in **slices** — each one a thin, shippable vertical cut through the whole stack (a bit of model, a bit of API, a bit of UI), rather than building one full layer at a time. Progress is tracked via git tags (`v0.1`, ..., `v1.0-rehearsal-planning`) and the [Kumpas Implementation Framework](docs/) that drives development.
 
 ## Tech Stack
 
@@ -191,8 +195,8 @@ POST /rehearsal-plans/1/items
 
 Kumpas is developed module by module. Current focus:
 
-1. **Rehearsal Planning** ← in progress — song library, drag-and-drop rehearsal plan builder, export as image
-2. Attendance
+1. **Rehearsal Planning** — done, live (`v1.0-rehearsal-planning`) — song library, drag-and-drop rehearsal plan builder, export as image
+2. Attendance ← next
 3. Membership Management
 4. Music Library
 5. Audition Management
