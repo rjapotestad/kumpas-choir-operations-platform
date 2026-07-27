@@ -3,91 +3,121 @@
 // Locally, it falls back to your dev backend.
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+const ACCESS_CODE_KEY = 'kumpas_access_code'
+
+export function getStoredAccessCode() {
+  return sessionStorage.getItem(ACCESS_CODE_KEY) || ''
+}
+
+export function setStoredAccessCode(code) {
+  sessionStorage.setItem(ACCESS_CODE_KEY, code)
+}
+
+export function clearStoredAccessCode() {
+  sessionStorage.removeItem(ACCESS_CODE_KEY)
+}
+
+// A lightweight, standalone check used only by the password gate itself —
+// deliberately bypasses apiFetch's reload-on-401 behavior (that's meant for
+// an already-unlocked session losing its code mid-use, not for the initial
+// "is this password even right" check, which should just show a clean
+// inline error instead of reloading the page).
+export async function checkAccessCode(code) {
+  const response = await fetch(`${BASE_URL}/songs`, {
+    headers: { 'X-Access-Code': code },
+  })
+  return response.ok
+}
+
+// Centralized fetch wrapper — attaches the access code to every request and
+// gives every API function the same error handling, instead of repeating
+// this logic (and forgetting it) in each function individually.
+async function apiFetch(path, options = {}) {
+  const headers = {
+    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    'X-Access-Code': getStoredAccessCode(),
+    ...options.headers,
+  }
+
+  const response = await fetch(`${BASE_URL}${path}`, { ...options, headers })
+
+  if (response.status === 401) {
+    // Wrong or missing code — clear it and reload so the password gate reappears
+    clearStoredAccessCode()
+    window.location.reload()
+    throw new Error('Access code required')
+  }
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}))
+    throw new Error(errorBody.detail || `Request failed (status ${response.status})`)
+  }
+
+  return response.json()
+}
+
 export async function getAppInfo() {
-  const response = await fetch(`${BASE_URL}/appinfo`)
-  return response.json()
+  return apiFetch('/appinfo')
 }
-export async function getSongs(){
-  const response = await fetch(`${BASE_URL}/songs`)
-  return response.json()
+
+export async function getSongs() {
+  return apiFetch('/songs')
 }
-export async function createSong(song){
-  const response = await fetch (`${BASE_URL}/songs`, {
+
+export async function createSong(song) {
+  return apiFetch('/songs', {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
     body: JSON.stringify(song),
   })
-  return response.json()
 }
+
 export async function updateSong(id, updates) {
-  const response = await fetch(`${BASE_URL}/songs/${id}`, {
+  return apiFetch(`/songs/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
   })
-  return response.json()
 }
 
 export async function deleteSong(id) {
-  const response = await fetch(`${BASE_URL}/songs/${id}`, {
-    method: 'DELETE',
-  })
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}))
-    throw new Error(errorBody.detail || `Failed to delete song (status ${response.status})`)
-  }
-  return response.json()
+  return apiFetch(`/songs/${id}`, { method: 'DELETE' })
 }
 
 export async function getRehearsalPlans() {
-  const response = await fetch(`${BASE_URL}/rehearsal-plans`)
-  return response.json()
+  return apiFetch('/rehearsal-plans')
 }
 
 export async function getRehearsalPlan(id) {
-  const response = await fetch(`${BASE_URL}/rehearsal-plans/${id}`)
-  return response.json()
+  return apiFetch(`/rehearsal-plans/${id}`)
 }
 
 export async function createRehearsalPlan(plan) {
-  const response = await fetch(`${BASE_URL}/rehearsal-plans`, {
+  return apiFetch('/rehearsal-plans', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(plan),
   })
-  return response.json()
 }
 
 export async function updateRehearsalPlan(id, updates) {
-  const response = await fetch(`${BASE_URL}/rehearsal-plans/${id}`, {
+  return apiFetch(`/rehearsal-plans/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
   })
-  return response.json()
 }
 
 export async function addPlanItem(planId, item) {
-  const response = await fetch(`${BASE_URL}/rehearsal-plans/${planId}/items`, {
+  return apiFetch(`/rehearsal-plans/${planId}/items`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(item),
   })
-  return response.json()
 }
 
 export async function updatePlanItem(planId, itemId, updates) {
-  const response = await fetch(`${BASE_URL}/rehearsal-plans/${planId}/items/${itemId}`, {
+  return apiFetch(`/rehearsal-plans/${planId}/items/${itemId}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
   })
-  return response.json()
 }
 
 export async function deletePlanItem(planId, itemId) {
-  const response = await fetch(`${BASE_URL}/rehearsal-plans/${planId}/items/${itemId}`, {
-    method: 'DELETE',
-  })
-  return response.json()
+  return apiFetch(`/rehearsal-plans/${planId}/items/${itemId}`, { method: 'DELETE' })
 }

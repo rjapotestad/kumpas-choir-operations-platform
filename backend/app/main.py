@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.database import Base, engine, get_db
@@ -9,6 +9,17 @@ from datetime import date as date_type
 import os
 
 app = FastAPI()
+
+# ACCESS_CODE is a shared secret (like a wifi password) that gates the real
+# data routes so random visitors who find the live URL can't view or edit
+# your songs/plans. This is NOT per-user auth — everyone who knows the code
+# shares the same data, same as today. If unset, the app is left open (so
+# local dev doesn't require setting anything).
+ACCESS_CODE = os.getenv("ACCESS_CODE")
+
+async def verify_access_code(x_access_code: str | None = Header(None)):
+    if ACCESS_CODE and x_access_code != ACCESS_CODE:
+        raise HTTPException(status_code=401, detail="Invalid or missing access code")
 
 # CORS_ORIGINS is a comma-separated list of allowed frontend URLs, set via
 # environment variable so production origins (Vercel/Netlify) don't need to
@@ -92,19 +103,19 @@ class RehearsalPlanOut(BaseModel):
     items: list[RehearsalPlanItemOut] = []
     model_config = {"from_attributes": True}
 #Print all songs
-@app.get("/songs")
+@app.get("/songs", dependencies=[Depends(verify_access_code)])
 async def get_songs_db(db: Session = Depends(get_db)):
     from sqlalchemy import nullslast
     return db.query(SongModel).order_by(nullslast(SongModel.order_index), SongModel.id).all()
 #Print songs based on ID
-@app.get("/songs/{id}")
+@app.get("/songs/{id}", dependencies=[Depends(verify_access_code)])
 async def get_song(id:int, db: Session = Depends(get_db)):
     song = db.query(SongModel).filter(SongModel.id == id).first()
     if not song:
         raise HTTPException(status_code=404, detail="song not found")
     return song
 #Add new songs
-@app.post("/songs")
+@app.post("/songs", dependencies=[Depends(verify_access_code)])
 async def add_song(song: SongCreate, db: Session = Depends(get_db)):
     new_song = SongModel(**song.model_dump())
     db.add(new_song)
@@ -112,7 +123,7 @@ async def add_song(song: SongCreate, db: Session = Depends(get_db)):
     db.refresh(new_song)
     return new_song
 #Update song data 
-@app.put("/songs/{id}")
+@app.put("/songs/{id}", dependencies=[Depends(verify_access_code)])
 async def update_song(id:int, updates: SongUpdate, db: Session = Depends(get_db)):
     song = db.query(SongModel).filter(SongModel.id == id).first()
     if not song:
@@ -129,7 +140,7 @@ async def update_song(id:int, updates: SongUpdate, db: Session = Depends(get_db)
     db.refresh(song)
     return song
 #Delete song
-@app.delete("/songs/{id}")
+@app.delete("/songs/{id}", dependencies=[Depends(verify_access_code)])
 async def delete_song(id:int, db: Session = Depends(get_db)):
     from sqlalchemy.exc import IntegrityError
     song = db.query(SongModel).filter(SongModel.id == id).first()
@@ -147,7 +158,7 @@ async def delete_song(id:int, db: Session = Depends(get_db)):
     return {"Result":f"song {id} deleted"}
 
 #Create a rehearsal plan
-@app.post("/rehearsal-plans", response_model=RehearsalPlanOut)
+@app.post("/rehearsal-plans", response_model=RehearsalPlanOut, dependencies=[Depends(verify_access_code)])
 async def add_rehearsal_plan(plan: RehearsalPlanCreate, db: Session = Depends(get_db)):
     new_plan = RehearsalPlanModel(**plan.model_dump())
     db.add(new_plan)
@@ -156,12 +167,12 @@ async def add_rehearsal_plan(plan: RehearsalPlanCreate, db: Session = Depends(ge
     return new_plan
 
 #List all rehearsal plans
-@app.get("/rehearsal-plans", response_model=list[RehearsalPlanOut])
+@app.get("/rehearsal-plans", response_model=list[RehearsalPlanOut], dependencies=[Depends(verify_access_code)])
 async def get_rehearsal_plans(db: Session = Depends(get_db)):
     return db.query(RehearsalPlanModel).all()
 
 #Get one rehearsal plan, including its items
-@app.get("/rehearsal-plans/{id}", response_model=RehearsalPlanOut)
+@app.get("/rehearsal-plans/{id}", response_model=RehearsalPlanOut, dependencies=[Depends(verify_access_code)])
 async def get_rehearsal_plan(id: int, db: Session = Depends(get_db)):
     plan = db.query(RehearsalPlanModel).filter(RehearsalPlanModel.id == id).first()
     if not plan:
@@ -169,7 +180,7 @@ async def get_rehearsal_plan(id: int, db: Session = Depends(get_db)):
     return plan
 
 #Update a rehearsal plan's own fields (date/title/notes)
-@app.put("/rehearsal-plans/{id}", response_model=RehearsalPlanOut)
+@app.put("/rehearsal-plans/{id}", response_model=RehearsalPlanOut, dependencies=[Depends(verify_access_code)])
 async def update_rehearsal_plan(id: int, updates: RehearsalPlanUpdate, db: Session = Depends(get_db)):
     plan = db.query(RehearsalPlanModel).filter(RehearsalPlanModel.id == id).first()
     if not plan:
@@ -191,7 +202,7 @@ async def update_rehearsal_plan(id: int, updates: RehearsalPlanUpdate, db: Sessi
     return plan
 
 #Delete a rehearsal plan (and its items, via cascade)
-@app.delete("/rehearsal-plans/{id}")
+@app.delete("/rehearsal-plans/{id}", dependencies=[Depends(verify_access_code)])
 async def delete_rehearsal_plan(id: int, db: Session = Depends(get_db)):
     plan = db.query(RehearsalPlanModel).filter(RehearsalPlanModel.id == id).first()
     if not plan:
@@ -201,7 +212,7 @@ async def delete_rehearsal_plan(id: int, db: Session = Depends(get_db)):
     return {"Result": f"rehearsal plan {id} deleted"}
 
 #Add an item (song block) to a rehearsal plan
-@app.post("/rehearsal-plans/{id}/items", response_model=RehearsalPlanItemOut)
+@app.post("/rehearsal-plans/{id}/items", response_model=RehearsalPlanItemOut, dependencies=[Depends(verify_access_code)])
 async def add_rehearsal_plan_item(id: int, item: RehearsalPlanItemCreate, db: Session = Depends(get_db)):
     plan = db.query(RehearsalPlanModel).filter(RehearsalPlanModel.id == id).first()
     if not plan:
@@ -218,7 +229,7 @@ async def add_rehearsal_plan_item(id: int, item: RehearsalPlanItemCreate, db: Se
     return new_item
 
 #Update an item's time/order/duration
-@app.put("/rehearsal-plans/{id}/items/{item_id}", response_model=RehearsalPlanItemOut)
+@app.put("/rehearsal-plans/{id}/items/{item_id}", response_model=RehearsalPlanItemOut, dependencies=[Depends(verify_access_code)])
 async def update_rehearsal_plan_item(id: int, item_id: int, updates: RehearsalPlanItemUpdate, db: Session = Depends(get_db)):
     item = db.query(RehearsalPlanItemModel).filter(
         RehearsalPlanItemModel.id == item_id,
@@ -239,7 +250,7 @@ async def update_rehearsal_plan_item(id: int, item_id: int, updates: RehearsalPl
     return item
 
 #Remove an item from a rehearsal plan
-@app.delete("/rehearsal-plans/{id}/items/{item_id}")
+@app.delete("/rehearsal-plans/{id}/items/{item_id}", dependencies=[Depends(verify_access_code)])
 async def delete_rehearsal_plan_item(id: int, item_id: int, db: Session = Depends(get_db)):
     item = db.query(RehearsalPlanItemModel).filter(
         RehearsalPlanItemModel.id == item_id,
