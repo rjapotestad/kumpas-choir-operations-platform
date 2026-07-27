@@ -1,4 +1,5 @@
 # Kumpas: A Choir Operations Platform
+![Default dashboard](docs/rehearsal-planner-demo.png)
 
 Kumpas is a tool for choir officers to plan rehearsals, manage a song library, and (eventually) track attendance, membership, and music assets — replacing a patchwork of Google Sheets with a single purpose-built app.
 
