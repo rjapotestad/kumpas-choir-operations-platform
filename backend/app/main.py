@@ -4,8 +4,11 @@ from pydantic import BaseModel
 from app.database import Base, engine, get_db
 from app.models.song import Song as SongModel
 from app.models.rehearsal_plan import RehearsalPlan as RehearsalPlanModel, RehearsalPlanItem as RehearsalPlanItemModel
+from app.models.member import Member as MemberModel
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date as date_type
+from enum import Enum
+from typing import Literal
 import os
 
 app = FastAPI()
@@ -102,6 +105,34 @@ class RehearsalPlanOut(BaseModel):
     end_time: str
     items: list[RehearsalPlanItemOut] = []
     model_config = {"from_attributes": True}
+
+class MemberStatus(str, Enum):
+    active = "Active"
+    inactive = "Inactive"
+    probationary = "Probationary"
+    trainee = "Trainee"
+
+class MemberSection(str, Enum):
+    soprano = "Soprano"
+    alto = "Alto"
+    tenor = "Tenor"
+    bass = "Bass"
+
+class MemberCreate(BaseModel):
+    name: str
+    email: str | None = None
+    status: MemberStatus = MemberStatus.active
+    section: MemberSection
+    subsection: Literal[1, 2] | None = None
+    remarks: str | None = None
+
+class MemberUpdate(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    status: MemberStatus | None = None
+    section: MemberSection | None = None
+    subsection: Literal[1, 2] | None = None
+    remarks: str | None = None
 #Print all songs
 @app.get("/songs", dependencies=[Depends(verify_access_code)])
 async def get_songs_db(db: Session = Depends(get_db)):
@@ -262,4 +293,66 @@ async def delete_rehearsal_plan_item(id: int, item_id: int, db: Session = Depend
     db.delete(item)
     db.commit()
     return {"Result": f"item {item_id} deleted from plan {id}"}
+
+#List members, optionally filtered by section and/or status
+@app.get("/members", dependencies=[Depends(verify_access_code)])
+async def get_members(section: MemberSection | None = None, status: MemberStatus | None = None, db: Session = Depends(get_db)):
+    query = db.query(MemberModel)
+    if section:
+        query = query.filter(MemberModel.section == section.value)
+    if status:
+        query = query.filter(MemberModel.status == status.value)
+    return query.order_by(MemberModel.name).all()
+
+#Get a single member
+@app.get("/members/{id}", dependencies=[Depends(verify_access_code)])
+async def get_member(id: int, db: Session = Depends(get_db)):
+    member = db.query(MemberModel).filter(MemberModel.id == id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="member not found")
+    return member
+
+#Add a new member
+@app.post("/members", dependencies=[Depends(verify_access_code)])
+async def add_member(member: MemberCreate, db: Session = Depends(get_db)):
+    data = member.model_dump()
+    data["status"] = member.status.value
+    data["section"] = member.section.value
+    new_member = MemberModel(**data)
+    db.add(new_member)
+    db.commit()
+    db.refresh(new_member)
+    return new_member
+
+#Update member data
+@app.put("/members/{id}", dependencies=[Depends(verify_access_code)])
+async def update_member(id: int, updates: MemberUpdate, db: Session = Depends(get_db)):
+    member = db.query(MemberModel).filter(MemberModel.id == id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="member not found")
+    if updates.name:
+        member.name = updates.name
+    if updates.email is not None:
+        member.email = updates.email or None
+    if updates.status is not None:
+        member.status = updates.status.value
+    if updates.section is not None:
+        member.section = updates.section.value
+    if updates.subsection is not None:
+        member.subsection = updates.subsection
+    if updates.remarks is not None:
+        member.remarks = updates.remarks or None
+    db.commit()
+    db.refresh(member)
+    return member
+
+#Delete a member
+@app.delete("/members/{id}", dependencies=[Depends(verify_access_code)])
+async def delete_member(id: int, db: Session = Depends(get_db)):
+    member = db.query(MemberModel).filter(MemberModel.id == id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="member not found")
+    db.delete(member)
+    db.commit()
+    return {"Result": f"member {id} deleted"}
 

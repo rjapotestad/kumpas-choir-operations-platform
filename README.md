@@ -52,6 +52,12 @@ kumpas-choir-operations-platform/
    ```
    DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/kumpas_db
    ```
+   Optional (both have safe defaults, only needed for extra local control):
+   ```
+   CORS_ORIGINS=http://localhost:5173
+   ACCESS_CODE=your-chosen-code
+   ```
+   `ACCESS_CODE` gates every data-modifying/reading route behind a shared secret (sent as an `X-Access-Code` header) — leave it unset for frictionless local dev; it's meant for the deployed/public version.
 3. Create the database (if it doesn't exist yet):
    ```sql
    CREATE DATABASE kumpas_db;
@@ -191,17 +197,41 @@ POST /rehearsal-plans/1/items
 }
 ```
 
+### Members
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/members` | List members, ordered by name. Filterable via `?section=` and/or `?status=` query params |
+| `GET` | `/members/{id}` | Get a single member |
+| `POST` | `/members` | Create a member |
+| `PUT` | `/members/{id}` | Update a member (any subset of fields) |
+| `DELETE` | `/members/{id}` | Delete a member |
+
+**Member fields**: `name` (required), `email` (optional), `status` (enum: `Active`/`Inactive`/`Probationary`/`Trainee`, defaults to `Active`), `section` (required, enum: `Soprano`/`Alto`/`Tenor`/`Bass`), `subsection` (optional, `1` or `2` — combine with section for display as S1/S2/A1/A2/T1/T2/B1/B2), `remarks` (optional)
+
+Example — create a member:
+```json
+POST /members
+{
+  "name": "Juan Dela Cruz",
+  "email": "juan@example.com",
+  "status": "Active",
+  "section": "Soprano",
+  "subsection": 1,
+  "remarks": "Section leader"
+}
+```
+
 ## Roadmap
 
 Kumpas is developed module by module. Current focus:
 
 1. **Rehearsal Planning** — done, live (`v1.0-rehearsal-planning`) — song library, drag-and-drop rehearsal plan builder
-2. Attendance ← next
-3. Membership Management
+2. **Membership & Attendance** ← in progress — member directory (done), rehearsal attendance checker, analytics dashboard
+3. Seat Plan
 4. Music Library
 5. Audition Management
-6. Analytics Dashboard
-7. Officer Portal
-8. Member Portal
+6. Officer Portal
+7. Member Portal
 
 See the Implementation Framework doc for the full slice-by-slice breakdown of each module.
