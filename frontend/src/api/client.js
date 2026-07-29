@@ -121,3 +121,29 @@ export async function updatePlanItem(planId, itemId, updates) {
 export async function deletePlanItem(planId, itemId) {
   return apiFetch(`/rehearsal-plans/${planId}/items/${itemId}`, { method: 'DELETE' })
 }
+
+export async function getMembers(filters = {}) {
+  const params = new URLSearchParams()
+  if (filters.section) params.set('section', filters.section)
+  if (filters.status) params.set('status', filters.status)
+  const query = params.toString() ? `?${params.toString()}` : ''
+  return apiFetch(`/members${query}`)
+}
+
+export async function createMember(member) {
+  return apiFetch('/members', {
+    method: 'POST',
+    body: JSON.stringify(member),
+  })
+}
+
+export async function updateMember(id, updates) {
+  return apiFetch(`/members/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  })
+}
+
+export async function deleteMember(id) {
+  return apiFetch(`/members/${id}`, { method: 'DELETE' })
+}

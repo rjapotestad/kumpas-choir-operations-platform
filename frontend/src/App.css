@@ -344,7 +344,8 @@ form button[type="submit"]:hover {
   transition: opacity 0.12s ease;
 }
 
-.song-management-list li:hover .song-actions {
+.song-management-list li:hover .song-actions,
+.member-management-list li:hover .song-actions {
   opacity: 1;
   pointer-events: auto;
 }
@@ -528,4 +529,130 @@ form button[type="submit"]:hover {
 
 .resize-handle:hover {
   background: var(--color-primary);
+}
+
+/* ---------- Nav tabs ---------- */
+
+.app-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.app-nav button {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.app-nav button:hover {
+  color: var(--color-text);
+}
+
+.app-nav button.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* ---------- Members view ---------- */
+
+.members-view {
+  padding: 1.5rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.member-form {
+  max-width: 480px;
+}
+
+.member-form-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.member-form-row select {
+  flex: 1;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  padding: 0.5rem 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.member-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.member-filters select {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.member-management-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.member-management-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.member-management-list li:hover {
+  background: rgba(245, 245, 240, 0.07);
+}
+
+.member-section-badge {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+}
+
+.member-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-status-badge {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
 }

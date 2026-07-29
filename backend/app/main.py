@@ -173,19 +173,16 @@ async def update_song(id:int, updates: SongUpdate, db: Session = Depends(get_db)
 #Delete song
 @app.delete("/songs/{id}", dependencies=[Depends(verify_access_code)])
 async def delete_song(id:int, db: Session = Depends(get_db)):
-    from sqlalchemy.exc import IntegrityError
     song = db.query(SongModel).filter(SongModel.id == id).first()
     if not song:
         raise HTTPException(status_code=404, detail="song not found")
-    try:
-        db.delete(song)
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(
-            status_code=409,
-            detail="Cannot delete this song — it is currently placed in one or more rehearsal plans. Remove it from the plan first.",
-        )
+    # Deleting a song also removes it from any rehearsal plan it's currently
+    # placed in, across ALL plans (not just whichever one the UI happens to
+    # be showing) — rather than blocking the deletion until the user manually
+    # removes every placement first.
+    db.query(RehearsalPlanItemModel).filter(RehearsalPlanItemModel.song_id == id).delete()
+    db.delete(song)
+    db.commit()
     return {"Result":f"song {id} deleted"}
 
 #Create a rehearsal plan
