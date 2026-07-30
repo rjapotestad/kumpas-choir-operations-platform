@@ -2,6 +2,7 @@ import { useState } from 'react'
 import './App.css'
 import RehearsalPlanningView from './components/RehearsalPlanningView'
 import MembersView from './components/MembersView'
+import AttendanceChecker from './components/AttendanceChecker'
 
 function App() {
   const [activeView, setActiveView] = useState('rehearsal')
@@ -18,6 +19,12 @@ function App() {
             Rehearsal Planning
           </button>
           <button
+            className={activeView === 'attendance' ? 'active' : ''}
+            onClick={() => setActiveView('attendance')}
+          >
+            Attendance
+          </button>
+          <button
             className={activeView === 'members' ? 'active' : ''}
             onClick={() => setActiveView('members')}
           >
@@ -26,7 +33,9 @@ function App() {
         </nav>
       </header>
 
-      {activeView === 'rehearsal' ? <RehearsalPlanningView /> : <MembersView />}
+      {activeView === 'rehearsal' && <RehearsalPlanningView />}
+      {activeView === 'attendance' && <AttendanceChecker />}
+      {activeView === 'members' && <MembersView />}
     </>
   )
 }

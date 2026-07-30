@@ -656,3 +656,94 @@ form button[type="submit"]:hover {
   color: var(--color-text-muted);
   flex-shrink: 0;
 }
+
+/* ---------- Attendance view ---------- */
+
+.attendance-view {
+  padding: 1.5rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.attendance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.attendance-header button {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.attendance-header button:hover {
+  background: rgba(238, 64, 4, 0.1);
+  border-color: var(--color-primary);
+}
+
+.attendance-roster {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.attendance-roster li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.4rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.attendance-status-buttons {
+  margin-left: auto;
+  display: flex;
+  gap: 0.35rem;
+}
+
+.attendance-status-buttons button {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.attendance-status-buttons button:hover {
+  border-color: var(--color-primary);
+}
+
+.attendance-status-buttons button.active.status-present {
+  background: #53863b;
+  border-color: #53863b;
+  color: #fff;
+}
+
+.attendance-status-buttons button.active.status-absent {
+  background: #EE4004;
+  border-color: #EE4004;
+  color: #fff;
+}
+
+.attendance-status-buttons button.active.status-excused {
+  background: #F5E439;
+  border-color: #F5E439;
+  color: #042a37;
+}
+
+.attendance-status-buttons button.active.status-late {
+  background: #f97144;
+  border-color: #f97144;
+  color: #042a37;
+}

@@ -147,3 +147,14 @@ export async function updateMember(id, updates) {
 export async function deleteMember(id) {
   return apiFetch(`/members/${id}`, { method: 'DELETE' })
 }
+
+export async function getRoster(planId) {
+  return apiFetch(`/rehearsal-plans/${planId}/roster`)
+}
+
+export async function markAttendance(planId, memberId, updates) {
+  return apiFetch(`/rehearsal-plans/${planId}/attendance/${memberId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  })
+}

@@ -9,25 +9,22 @@ import {
   getSongs,
   updateSong,
   deleteSong,
-  getRehearsalPlans,
-  createRehearsalPlan,
-  getRehearsalPlan,
   updateRehearsalPlan,
   addPlanItem,
   updatePlanItem,
   deletePlanItem,
 } from '../api/client'
 import { slotIndexToTime, timeToSlotIndex } from '../utils/timeGrid'
+import { useActivePlan } from '../hooks/useActivePlan'
 
 function RehearsalPlanningView() {
   const [editingSong, setEditingSong] = useState(null)
   const [refreshSignal, setRefreshSignal] = useState(0)
   const [songs, setSongs] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [activePlan, setActivePlan] = useState(null)
+  const { activePlan, refreshActivePlan } = useActivePlan()
   const gridSectionRef = useRef(null)
   const [libraryHeight, setLibraryHeight] = useState(null)
-  const planLoadStartedRef = useRef(false)
 
   function handleSaved() {
     setEditingSong(null)
@@ -50,41 +47,6 @@ function RehearsalPlanningView() {
     } catch (error) {
       alert(error.message)
     }
-  }
-
-  // Load the active plan on first render — create one if none exists yet.
-  // Guarded against React StrictMode's deliberate double-invoke of effects
-  // in development, which could otherwise race two "no plans exist" checks
-  // and create two separate plans.
-  useEffect(() => {
-    if (planLoadStartedRef.current) return
-    planLoadStartedRef.current = true
-
-    function getLocalDateString() {
-      // toISOString() converts to UTC, which can land on the wrong calendar
-      // day depending on timezone — build the string from local date parts instead
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = String(now.getMonth() + 1).padStart(2, '0')
-      const day = String(now.getDate()).padStart(2, '0')
-      return `${year}-${month}-${day}`
-    }
-
-    async function loadOrCreatePlan() {
-      const plans = await getRehearsalPlans()
-      if (plans.length > 0) {
-        setActivePlan(plans[0])
-      } else {
-        const newPlan = await createRehearsalPlan({ date: getLocalDateString(), title: 'Untitled Rehearsal' })
-        setActivePlan(newPlan)
-      }
-    }
-    loadOrCreatePlan()
-  }, [])
-
-  async function refreshActivePlan() {
-    const updated = await getRehearsalPlan(activePlan.id)
-    setActivePlan(updated)
   }
 
   async function handleDragEnd(event) {
