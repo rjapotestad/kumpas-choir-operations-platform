@@ -222,12 +222,40 @@ POST /members
 }
 ```
 
+### Attendance
+
+Attendance attaches to an existing rehearsal plan — there's no separate "take attendance" object to create first.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/rehearsal-plans/{id}/roster` | Every non-Inactive member for this rehearsal, each with their attendance `status` (`null` if not yet marked) |
+| `PUT` | `/rehearsal-plans/{id}/attendance/{member_id}` | Mark (create or update) one member's attendance status for this rehearsal |
+
+**Attendance status values**: `Present`, `Absent`, `Excused`, `Late`
+
+Example — mark a member present:
+```json
+PUT /rehearsal-plans/1/attendance/5
+{
+  "status": "Present"
+}
+```
+
+Example roster response:
+```json
+GET /rehearsal-plans/1/roster
+[
+  { "member_id": 5, "name": "Juan Dela Cruz", "section": "Soprano", "subsection": 1, "status": "Present", "remarks": null },
+  { "member_id": 6, "name": "Maria Santos", "section": "Alto", "subsection": null, "status": null, "remarks": null }
+]
+```
+
 ## Roadmap
 
 Kumpas is developed module by module. Current focus:
 
 1. **Rehearsal Planning** — done, live (`v1.0-rehearsal-planning`) — song library, drag-and-drop rehearsal plan builder
-2. **Membership & Attendance** ← in progress — member directory (done), rehearsal attendance checker, analytics dashboard
+2. **Membership & Attendance** ← in progress — member directory (done), attendance recording API (done), attendance checker UI, analytics dashboard
 3. Seat Plan
 4. Music Library
 5. Audition Management

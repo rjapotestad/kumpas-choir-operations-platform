@@ -13,6 +13,7 @@ class RehearsalPlan(Base):
     end_time = Column(String, nullable=True, default="20:00")
 
     items = relationship("RehearsalPlanItem", back_populates="plan", cascade="all, delete-orphan")
+    attendance_records = relationship("Attendance", cascade="all, delete-orphan")
 
 
 class RehearsalPlanItem(Base):

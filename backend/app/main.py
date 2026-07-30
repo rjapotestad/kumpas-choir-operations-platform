@@ -5,6 +5,7 @@ from app.database import Base, engine, get_db
 from app.models.song import Song as SongModel
 from app.models.rehearsal_plan import RehearsalPlan as RehearsalPlanModel, RehearsalPlanItem as RehearsalPlanItemModel
 from app.models.member import Member as MemberModel
+from app.models.attendance import Attendance as AttendanceModel
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date as date_type
 from enum import Enum
@@ -132,6 +133,24 @@ class MemberUpdate(BaseModel):
     status: MemberStatus | None = None
     section: MemberSection | None = None
     subsection: Literal[1, 2] | None = None
+    remarks: str | None = None
+
+class AttendanceStatus(str, Enum):
+    present = "Present"
+    absent = "Absent"
+    excused = "Excused"
+    late = "Late"
+
+class AttendanceUpdate(BaseModel):
+    status: AttendanceStatus
+    remarks: str | None = None
+
+class RosterEntryOut(BaseModel):
+    member_id: int
+    name: str
+    section: str
+    subsection: int | None = None
+    status: str | None = None  # None means "unmarked" — no attendance record exists yet for this rehearsal
     remarks: str | None = None
 #Print all songs
 @app.get("/songs", dependencies=[Depends(verify_access_code)])
@@ -352,4 +371,67 @@ async def delete_member(id: int, db: Session = Depends(get_db)):
     db.delete(member)
     db.commit()
     return {"Result": f"member {id} deleted"}
+
+#Roster for a rehearsal — every non-Inactive member, with their attendance
+#status for this specific rehearsal (null/"unmarked" if not yet recorded)
+@app.get("/rehearsal-plans/{id}/roster", response_model=list[RosterEntryOut], dependencies=[Depends(verify_access_code)])
+async def get_roster(id: int, db: Session = Depends(get_db)):
+    plan = db.query(RehearsalPlanModel).filter(RehearsalPlanModel.id == id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="rehearsal plan not found")
+
+    members = (
+        db.query(MemberModel)
+        .filter(MemberModel.status != MemberStatus.inactive.value)
+        .order_by(MemberModel.section, MemberModel.subsection, MemberModel.name)
+        .all()
+    )
+    attendance_records = db.query(AttendanceModel).filter(AttendanceModel.rehearsal_plan_id == id).all()
+    attendance_by_member = {a.member_id: a for a in attendance_records}
+
+    roster = []
+    for member in members:
+        record = attendance_by_member.get(member.id)
+        roster.append(RosterEntryOut(
+            member_id=member.id,
+            name=member.name,
+            section=member.section,
+            subsection=member.subsection,
+            status=record.status if record else None,
+            remarks=record.remarks if record else None,
+        ))
+    return roster
+
+#Mark (create or update) one member's attendance status for a rehearsal —
+#an upsert, so the frontend doesn't need to know whether a record already exists
+@app.put("/rehearsal-plans/{id}/attendance/{member_id}", dependencies=[Depends(verify_access_code)])
+async def mark_attendance(id: int, member_id: int, updates: AttendanceUpdate, db: Session = Depends(get_db)):
+    plan = db.query(RehearsalPlanModel).filter(RehearsalPlanModel.id == id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="rehearsal plan not found")
+
+    member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="member not found")
+
+    record = db.query(AttendanceModel).filter(
+        AttendanceModel.rehearsal_plan_id == id,
+        AttendanceModel.member_id == member_id,
+    ).first()
+
+    if record:
+        record.status = updates.status.value
+        record.remarks = updates.remarks
+    else:
+        record = AttendanceModel(
+            rehearsal_plan_id=id,
+            member_id=member_id,
+            status=updates.status.value,
+            remarks=updates.remarks,
+        )
+        db.add(record)
+
+    db.commit()
+    db.refresh(record)
+    return record
 

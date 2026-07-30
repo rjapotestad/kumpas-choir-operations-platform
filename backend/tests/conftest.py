@@ -35,3 +35,15 @@ app.dependency_overrides[verify_access_code] = lambda: None
 @pytest.fixture
 def client():
     return TestClient(app)
+
+
+@pytest.fixture
+def db_session():
+    # A raw session for tests that need to bypass the API entirely — e.g.
+    # confirming a database-level constraint actually exists, rather than
+    # just testing that the endpoint's own logic happens to enforce it
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

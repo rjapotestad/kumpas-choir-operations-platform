@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
 from app.database import Base
 
 class Member(Base):
@@ -11,3 +12,5 @@ class Member(Base):
     section = Column(String, nullable=False)
     subsection = Column(Integer, nullable=True)  # 1 or 2, nullable — not every section needs a split
     remarks = Column(String, nullable=True)
+
+    attendance_records = relationship("Attendance", back_populates="member", cascade="all, delete-orphan")
