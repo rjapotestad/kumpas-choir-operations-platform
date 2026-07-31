@@ -158,3 +158,27 @@ export async function markAttendance(planId, memberId, updates) {
     body: JSON.stringify(updates),
   })
 }
+
+export async function getOverallRate() {
+  return apiFetch('/analytics/overall-rate')
+}
+
+export async function getAttendanceBySection() {
+  return apiFetch('/analytics/attendance-by-section')
+}
+
+export async function getTopAttendees(limit = 5) {
+  return apiFetch(`/analytics/top-attendees?limit=${limit}`)
+}
+
+export async function getMostAbsences(limit = 5) {
+  return apiFetch(`/analytics/most-absences?limit=${limit}`)
+}
+
+export async function getTrend() {
+  return apiFetch('/analytics/trend')
+}
+
+export async function getAtRisk() {
+  return apiFetch('/analytics/at-risk')
+}

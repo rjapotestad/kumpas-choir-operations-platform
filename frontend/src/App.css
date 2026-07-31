@@ -747,3 +747,70 @@ form button[type="submit"]:hover {
   border-color: #f97144;
   color: #042a37;
 }
+
+/* ---------- Analytics view ---------- */
+
+.analytics-view {
+  padding: 1.5rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.analytics-view h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: 1.5rem 0 0.75rem;
+}
+
+.analytics-cards {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.analytics-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.analytics-card-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+}
+
+.analytics-card-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.analytics-card-sub {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.analytics-empty {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.analytics-at-risk-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.analytics-at-risk-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0.4rem;
+  border-bottom: 1px solid var(--color-border);
+}
