@@ -152,6 +152,37 @@ class RosterEntryOut(BaseModel):
     subsection: int | None = None
     status: str | None = None  # None means "unmarked" — no attendance record exists yet for this rehearsal
     remarks: str | None = None
+
+class SectionAttendanceOut(BaseModel):
+    section: str
+    attendance_rate: float
+    total_records: int
+
+class MemberAttendanceOut(BaseModel):
+    member_id: int
+    name: str
+    section: str
+    present_count: int = 0
+    absent_count: int = 0
+    excused_count: int = 0
+    late_count: int = 0
+    attendance_rate: float
+
+class OverallRateOut(BaseModel):
+    attendance_rate: float
+    total_records: int
+
+class TrendPointOut(BaseModel):
+    rehearsal_plan_id: int
+    date: date_type
+    attendance_rate: float
+
+class AtRiskMemberOut(BaseModel):
+    member_id: int
+    name: str
+    section: str
+    recent_rate: float
+    historical_rate: float
 #Print all songs
 @app.get("/songs", dependencies=[Depends(verify_access_code)])
 async def get_songs_db(db: Session = Depends(get_db)):
@@ -434,4 +465,132 @@ async def mark_attendance(id: int, member_id: int, updates: AttendanceUpdate, db
     db.commit()
     db.refresh(record)
     return record
+
+# ---------- Analytics ----------
+# "Attended" = Present or Late (they showed up). "Did not attend" = Absent
+# or Excused (Excused only explains *why*, it doesn't change whether they
+# were there). All rate calculations below use this definition consistently.
+
+def _tally_status(records):
+    counts = {"Present": 0, "Absent": 0, "Excused": 0, "Late": 0}
+    for r in records:
+        counts[r.status] = counts.get(r.status, 0) + 1
+    return counts
+
+def _rate_from_counts(counts):
+    total = sum(counts.values())
+    attended = counts.get("Present", 0) + counts.get("Late", 0)
+    return round(attended / total * 100, 1) if total else 0.0
+
+def _all_member_stats(db: Session):
+    """MemberAttendanceOut for every member who has at least one attendance record."""
+    members = db.query(MemberModel).all()
+    stats = []
+    for member in members:
+        records = db.query(AttendanceModel).filter(AttendanceModel.member_id == member.id).all()
+        if not records:
+            continue
+        counts = _tally_status(records)
+        stats.append(MemberAttendanceOut(
+            member_id=member.id,
+            name=member.name,
+            section=member.section,
+            present_count=counts["Present"],
+            absent_count=counts["Absent"],
+            excused_count=counts["Excused"],
+            late_count=counts["Late"],
+            attendance_rate=_rate_from_counts(counts),
+        ))
+    return stats
+
+#Average attendance rate per section
+@app.get("/analytics/attendance-by-section", response_model=list[SectionAttendanceOut], dependencies=[Depends(verify_access_code)])
+async def attendance_by_section(db: Session = Depends(get_db)):
+    records = db.query(AttendanceModel).join(MemberModel).all()
+    by_section = {}
+    for record in records:
+        section = record.member.section
+        by_section.setdefault(section, {"attended": 0, "total": 0})
+        by_section[section]["total"] += 1
+        if record.status in ("Present", "Late"):
+            by_section[section]["attended"] += 1
+
+    result = [
+        SectionAttendanceOut(
+            section=section,
+            attendance_rate=round(counts["attended"] / counts["total"] * 100, 1),
+            total_records=counts["total"],
+        )
+        for section, counts in by_section.items()
+    ]
+    return sorted(result, key=lambda r: r.section)
+
+#Attendance rate across every member, every rehearsal
+@app.get("/analytics/overall-rate", response_model=OverallRateOut, dependencies=[Depends(verify_access_code)])
+async def overall_rate(db: Session = Depends(get_db)):
+    records = db.query(AttendanceModel).all()
+    counts = _tally_status(records)
+    return OverallRateOut(attendance_rate=_rate_from_counts(counts), total_records=len(records))
+
+#Members with the highest attendance rate
+@app.get("/analytics/top-attendees", response_model=list[MemberAttendanceOut], dependencies=[Depends(verify_access_code)])
+async def top_attendees(limit: int = 5, db: Session = Depends(get_db)):
+    stats = _all_member_stats(db)
+    stats.sort(key=lambda s: s.attendance_rate, reverse=True)
+    return stats[:limit]
+
+#Members with the most absences (raw count, not rate)
+@app.get("/analytics/most-absences", response_model=list[MemberAttendanceOut], dependencies=[Depends(verify_access_code)])
+async def most_absences(limit: int = 5, db: Session = Depends(get_db)):
+    stats = _all_member_stats(db)
+    stats.sort(key=lambda s: s.absent_count, reverse=True)
+    return stats[:limit]
+
+#Overall attendance rate per rehearsal, in date order — for a trend line
+@app.get("/analytics/trend", response_model=list[TrendPointOut], dependencies=[Depends(verify_access_code)])
+async def attendance_trend(db: Session = Depends(get_db)):
+    plans = db.query(RehearsalPlanModel).order_by(RehearsalPlanModel.date).all()
+    trend = []
+    for plan in plans:
+        records = db.query(AttendanceModel).filter(AttendanceModel.rehearsal_plan_id == plan.id).all()
+        if not records:
+            continue  # skip rehearsals where attendance was never taken
+        trend.append(TrendPointOut(
+            rehearsal_plan_id=plan.id,
+            date=plan.date,
+            attendance_rate=_rate_from_counts(_tally_status(records)),
+        ))
+    return trend
+
+#Members whose recent attendance has dropped notably below their own historical average
+@app.get("/analytics/at-risk", response_model=list[AtRiskMemberOut], dependencies=[Depends(verify_access_code)])
+async def at_risk_members(db: Session = Depends(get_db)):
+    RECENT_WINDOW = 3
+    DROP_THRESHOLD = 20.0  # percentage points
+
+    members = db.query(MemberModel).all()
+    at_risk = []
+    for member in members:
+        records = (
+            db.query(AttendanceModel)
+            .join(RehearsalPlanModel, AttendanceModel.rehearsal_plan_id == RehearsalPlanModel.id)
+            .filter(AttendanceModel.member_id == member.id)
+            .order_by(RehearsalPlanModel.date)
+            .all()
+        )
+        if len(records) < RECENT_WINDOW + 1:
+            continue  # not enough history for a meaningful comparison
+
+        historical_rate = _rate_from_counts(_tally_status(records))
+        recent_rate = _rate_from_counts(_tally_status(records[-RECENT_WINDOW:]))
+
+        if historical_rate - recent_rate >= DROP_THRESHOLD:
+            at_risk.append(AtRiskMemberOut(
+                member_id=member.id,
+                name=member.name,
+                section=member.section,
+                recent_rate=recent_rate,
+                historical_rate=historical_rate,
+            ))
+    return at_risk
 

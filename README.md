@@ -250,12 +250,38 @@ GET /rehearsal-plans/1/roster
 ]
 ```
 
+### Analytics
+
+Read-only aggregation endpoints over existing attendance data — no separate objects to create. "Attended" means `Present` or `Late`; "did not attend" means `Absent` or `Excused` (Excused just explains why, it doesn't change whether they were there).
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/analytics/overall-rate` | Attendance rate across every member, every rehearsal |
+| `GET` | `/analytics/attendance-by-section` | Average attendance rate per section |
+| `GET` | `/analytics/top-attendees?limit=5` | Members ranked by highest attendance rate |
+| `GET` | `/analytics/most-absences?limit=5` | Members ranked by raw absence count (not rate) |
+| `GET` | `/analytics/trend` | Overall attendance rate per rehearsal, in date order — rehearsals with no attendance taken are skipped |
+| `GET` | `/analytics/at-risk` | Members whose last 3 rehearsals' attendance rate has dropped 20+ percentage points below their own historical average (requires at least 4 total records to have enough history for a meaningful comparison) |
+
+Example:
+```json
+GET /analytics/overall-rate
+{ "attendance_rate": 82.5, "total_records": 40 }
+```
+```json
+GET /analytics/attendance-by-section
+[
+  { "section": "Alto", "attendance_rate": 78.0, "total_records": 10 },
+  { "section": "Soprano", "attendance_rate": 90.0, "total_records": 10 }
+]
+```
+
 ## Roadmap
 
 Kumpas is developed module by module. Current focus:
 
 1. **Rehearsal Planning** — done, live (`v1.0-rehearsal-planning`) — song library, drag-and-drop rehearsal plan builder
-2. **Membership & Attendance** ← in progress — member directory (done), attendance recording API (done), attendance checker UI, analytics dashboard
+2. **Membership & Attendance** ← in progress — member directory (done), attendance recording API (done), attendance checker UI (done), analytics API (done), analytics dashboard UI
 3. Seat Plan
 4. Music Library
 5. Audition Management

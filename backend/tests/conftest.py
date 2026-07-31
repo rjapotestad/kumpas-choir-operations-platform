@@ -14,6 +14,14 @@ engine = create_engine(
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# Wipe and rebuild the schema fresh on every `pytest` invocation. Without
+# this, test.db is a persistent file that accumulates data across every run
+# (each `pytest` call adds more songs/members/attendance on top of whatever
+# was left from last time) — harmless for tests that only check specific
+# entities they just created, but it silently breaks any test asserting an
+# exact GLOBAL total (e.g. analytics aggregates), since "total records" and
+# "overall rate" would drift upward every time the suite runs.
+Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 
