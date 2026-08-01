@@ -17,12 +17,12 @@ import {
 import { slotIndexToTime, timeToSlotIndex } from '../utils/timeGrid'
 import { useActivePlan } from '../hooks/useActivePlan'
 
-function RehearsalPlanningView() {
+function RehearsalPlanningView({ planId }) {
   const [editingSong, setEditingSong] = useState(null)
   const [refreshSignal, setRefreshSignal] = useState(0)
   const [songs, setSongs] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
-  const { activePlan, refreshActivePlan } = useActivePlan()
+  const { activePlan, refreshActivePlan } = useActivePlan(planId)
   const gridSectionRef = useRef(null)
   const [libraryHeight, setLibraryHeight] = useState(null)
 

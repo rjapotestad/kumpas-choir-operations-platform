@@ -82,8 +82,8 @@ export async function deleteSong(id) {
   return apiFetch(`/songs/${id}`, { method: 'DELETE' })
 }
 
-export async function getRehearsalPlans() {
-  return apiFetch('/rehearsal-plans')
+export async function getRehearsalPlans(month = null) {
+  return apiFetch(month ? `/rehearsal-plans?month=${month}` : '/rehearsal-plans')
 }
 
 export async function getRehearsalPlan(id) {

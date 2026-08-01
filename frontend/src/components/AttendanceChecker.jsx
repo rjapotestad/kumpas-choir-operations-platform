@@ -9,8 +9,8 @@ function sectionLabel(entry) {
   return entry.subsection ? `${initial}${entry.subsection}` : initial
 }
 
-function AttendanceChecker() {
-  const { activePlan } = useActivePlan()
+function AttendanceChecker({ planId }) {
+  const { activePlan } = useActivePlan(planId)
   const [roster, setRoster] = useState([])
 
   useEffect(() => {

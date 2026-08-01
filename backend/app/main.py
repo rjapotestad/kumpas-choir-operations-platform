@@ -244,10 +244,21 @@ async def add_rehearsal_plan(plan: RehearsalPlanCreate, db: Session = Depends(ge
     db.refresh(new_plan)
     return new_plan
 
-#List all rehearsal plans
+#List all rehearsal plans, optionally filtered to a single calendar month
 @app.get("/rehearsal-plans", response_model=list[RehearsalPlanOut], dependencies=[Depends(verify_access_code)])
-async def get_rehearsal_plans(db: Session = Depends(get_db)):
-    return db.query(RehearsalPlanModel).all()
+async def get_rehearsal_plans(month: str | None = None, db: Session = Depends(get_db)):
+    query = db.query(RehearsalPlanModel)
+    if month:
+        from sqlalchemy import extract
+        try:
+            year_str, month_str = month.split("-")
+            query = query.filter(
+                extract("year", RehearsalPlanModel.date) == int(year_str),
+                extract("month", RehearsalPlanModel.date) == int(month_str),
+            )
+        except (ValueError, AttributeError):
+            raise HTTPException(status_code=422, detail="month must be in YYYY-MM format")
+    return query.order_by(RehearsalPlanModel.date).all()
 
 #Get one rehearsal plan, including its items
 @app.get("/rehearsal-plans/{id}", response_model=RehearsalPlanOut, dependencies=[Depends(verify_access_code)])

@@ -11,14 +11,22 @@ function getLocalDateString() {
   return `${year}-${month}-${day}`
 }
 
-export function useActivePlan() {
+// If planId is given, loads that specific plan (driven by Calendar
+// selection). Otherwise falls back to the original "load or create the
+// first plan" behavior, so existing callers work unchanged.
+export function useActivePlan(planId = null) {
   const [activePlan, setActivePlan] = useState(null)
   const loadStartedRef = useRef(false)
 
-  // Guarded against React StrictMode's deliberate double-invoke of effects
-  // in development, which could otherwise race two "no plans exist" checks
-  // and create two separate plans.
   useEffect(() => {
+    if (planId) {
+      getRehearsalPlan(planId).then(setActivePlan)
+      return
+    }
+
+    // Guarded against React StrictMode's deliberate double-invoke of effects
+    // in development, which could otherwise race two "no plans exist" checks
+    // and create two separate plans.
     if (loadStartedRef.current) return
     loadStartedRef.current = true
 
@@ -32,7 +40,7 @@ export function useActivePlan() {
       }
     }
     loadOrCreatePlan()
-  }, [])
+  }, [planId])
 
   async function refreshActivePlan() {
     if (!activePlan) return

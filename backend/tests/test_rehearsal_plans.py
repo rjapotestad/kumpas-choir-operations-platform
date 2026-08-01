@@ -104,6 +104,24 @@ def test_list_rehearsal_plans(client):
     assert len(response.json()) >= 1
 
 
+def test_list_rehearsal_plans_filtered_by_month(client):
+    client.post("/rehearsal-plans", json={"date": "2027-03-05"})
+    client.post("/rehearsal-plans", json={"date": "2027-03-19"})
+    client.post("/rehearsal-plans", json={"date": "2027-04-02"})
+
+    response = client.get("/rehearsal-plans?month=2027-03")
+    assert response.status_code == 200
+    dates = [p["date"] for p in response.json()]
+    assert "2027-03-05" in dates
+    assert "2027-03-19" in dates
+    assert "2027-04-02" not in dates
+
+
+def test_list_rehearsal_plans_invalid_month_format(client):
+    response = client.get("/rehearsal-plans?month=not-a-month")
+    assert response.status_code == 422
+
+
 def test_update_rehearsal_plan_date(client):
     plan = client.post("/rehearsal-plans", json={"date": "2026-09-05", "title": "Original"}).json()
 
