@@ -120,7 +120,7 @@ A visual, drag-and-drop replacement for planning rehearsals in a spreadsheet.
 - **Composer/arranger and notes** (if set on the song) display on its block beneath the title, centered and adapting as the block resizes
 - **Remove** a block with the × button
 - Everything persists to Postgres immediately — no separate "save" step, and the arrangement survives a page reload
-- Currently works against a single active plan (auto-created on first load); a plan-picker for managing multiple rehearsal dates is a planned future addition
+- Navigate between rehearsals via the Calendar tab — clicking a date opens that specific plan here
 
 ### Design
 A dark, Calendar-inspired UI built on a four-color brand palette:
@@ -133,6 +133,9 @@ A dark, Calendar-inspired UI built on a four-color brand palette:
 | Sunrise | `#F5E439` | Drag-over highlight only, used sparingly |
 
 Song blocks cycle through a small palette derived from these four colors (each brand hue plus a tint), keyed to the block's own database ID so a song's color stays consistent across reloads. Typeface is Roboto for UI text and Roboto Mono for time labels, matching Google Calendar's own type system.
+
+### Calendar
+Month-grid view of rehearsals, navigable by month. Dates with a rehearsal are marked; clicking one opens that exact rehearsal in Rehearsal Planning/Attendance (this is the actual "which plan is active" picker — previously the app only ever showed the first plan it found). Clicking an empty date creates a new rehearsal there.
 
 ## API Reference
 
@@ -167,7 +170,7 @@ A rehearsal plan is a date with an ordered set of time-boxed song blocks (items)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/rehearsal-plans` | List all plans (each includes its items) |
+| `GET` | `/rehearsal-plans` | List all plans (each includes its items). Optional `?month=YYYY-MM` filter |
 | `GET` | `/rehearsal-plans/{id}` | Get a single plan, including its items |
 | `POST` | `/rehearsal-plans` | Create a plan |
 | `PUT` | `/rehearsal-plans/{id}` | Update a plan's own fields (date/title/notes/start_time/end_time) |
@@ -281,11 +284,12 @@ GET /analytics/attendance-by-section
 Kumpas is developed module by module. Current focus:
 
 1. **Rehearsal Planning** — done, live (`v1.0-rehearsal-planning`) — song library, drag-and-drop rehearsal plan builder
-2. **Membership & Attendance** ← in progress — member directory (done), attendance recording API (done), attendance checker UI (done), analytics API (done), analytics dashboard UI
-3. Seat Plan
-4. Music Library
-5. Audition Management
-6. Officer Portal
-7. Member Portal
+2. **Membership & Attendance** — done, live (`v1.0-membership-attendance`) — member directory, attendance checker, analytics dashboard
+3. **Calendar** ← in progress — month-grid rehearsal navigation (done); extends to Gigs once that module exists
+4. Gigs/Performances/Production
+5. Seat Plan — attaches to Performances instead of Rehearsals
+6. Music Library
+7. Officer Portal
+8. Member Portal
 
 See the Implementation Framework doc for the full slice-by-slice breakdown of each module.
