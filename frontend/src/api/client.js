@@ -182,3 +182,23 @@ export async function getTrend() {
 export async function getAtRisk() {
   return apiFetch('/analytics/at-risk')
 }
+
+export async function getGigs() {
+  return apiFetch('/gigs')
+}
+
+export async function getGig(id) {
+  return apiFetch(`/gigs/${id}`)
+}
+
+export async function createGig(gig) {
+  return apiFetch('/gigs', { method: 'POST', body: JSON.stringify(gig) })
+}
+
+export async function updateGig(id, updates) {
+  return apiFetch(`/gigs/${id}`, { method: 'PUT', body: JSON.stringify(updates) })
+}
+
+export async function deleteGig(id) {
+  return apiFetch(`/gigs/${id}`, { method: 'DELETE' })
+}

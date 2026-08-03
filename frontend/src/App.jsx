@@ -5,6 +5,7 @@ import MembersView from './components/MembersView'
 import AttendanceChecker from './components/AttendanceChecker'
 import AnalyticsDashboard from './components/AnalyticsDashboard'
 import CalendarView from './components/CalendarView'
+import GigsView from './components/GigsView'
 
 function App() {
   const [activeView, setActiveView] = useState('rehearsal')
@@ -23,6 +24,7 @@ function App() {
           <button className={activeView === 'calendar' ? 'active' : ''} onClick={() => setActiveView('calendar')}>Calendar</button>
           <button className={activeView === 'rehearsal' ? 'active' : ''} onClick={() => setActiveView('rehearsal')}>Rehearsal Planning</button>
           <button className={activeView === 'attendance' ? 'active' : ''} onClick={() => setActiveView('attendance')}>Attendance</button>
+          <button className={activeView === 'gigs' ? 'active' : ''} onClick={() => setActiveView('gigs')}>Gigs</button>
           <button className={activeView === 'members' ? 'active' : ''} onClick={() => setActiveView('members')}>Members</button>
           <button className={activeView === 'analytics' ? 'active' : ''} onClick={() => setActiveView('analytics')}>Analytics</button>
         </nav>
@@ -31,6 +33,7 @@ function App() {
       {activeView === 'calendar' && <CalendarView onOpenPlan={handleOpenPlan} />}
       {activeView === 'rehearsal' && <RehearsalPlanningView planId={selectedPlanId} />}
       {activeView === 'attendance' && <AttendanceChecker planId={selectedPlanId} />}
+      {activeView === 'gigs' && <GigsView />}
       {activeView === 'members' && <MembersView />}
       {activeView === 'analytics' && <AnalyticsDashboard />}
     </>
