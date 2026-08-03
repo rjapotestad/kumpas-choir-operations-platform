@@ -16,6 +16,7 @@ from app.models.song import Song  # noqa: F401 — import registers the table on
 from app.models.rehearsal_plan import RehearsalPlan, RehearsalPlanItem  # noqa: F401
 from app.models.member import Member  # noqa: F401
 from app.models.attendance import Attendance  # noqa: F401
+from app.models.gig import Gig  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

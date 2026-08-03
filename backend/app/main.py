@@ -6,6 +6,7 @@ from app.models.song import Song as SongModel
 from app.models.rehearsal_plan import RehearsalPlan as RehearsalPlanModel, RehearsalPlanItem as RehearsalPlanItemModel
 from app.models.member import Member as MemberModel
 from app.models.attendance import Attendance as AttendanceModel
+from app.models.gig import Gig as GigModel
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date as date_type
 from enum import Enum
@@ -183,6 +184,22 @@ class AtRiskMemberOut(BaseModel):
     section: str
     recent_rate: float
     historical_rate: float
+
+class GigCreate(BaseModel):
+    event_name: str
+    date: date_type
+    venue: str | None = None
+    performance_time: str | None = None
+    costume: str | None = None
+    notes: str | None = None
+
+class GigUpdate(BaseModel):
+    event_name: str | None = None
+    date: date_type | None = None
+    venue: str | None = None
+    performance_time: str | None = None
+    costume: str | None = None
+    notes: str | None = None
 #Print all songs
 @app.get("/songs", dependencies=[Depends(verify_access_code)])
 async def get_songs_db(db: Session = Depends(get_db)):
@@ -604,4 +621,58 @@ async def at_risk_members(db: Session = Depends(get_db)):
                 historical_rate=historical_rate,
             ))
     return at_risk
+
+#List all gigs
+@app.get("/gigs", dependencies=[Depends(verify_access_code)])
+async def get_gigs(db: Session = Depends(get_db)):
+    return db.query(GigModel).order_by(GigModel.date).all()
+
+#Get a single gig
+@app.get("/gigs/{id}", dependencies=[Depends(verify_access_code)])
+async def get_gig(id: int, db: Session = Depends(get_db)):
+    gig = db.query(GigModel).filter(GigModel.id == id).first()
+    if not gig:
+        raise HTTPException(status_code=404, detail="gig not found")
+    return gig
+
+#Create a gig
+@app.post("/gigs", dependencies=[Depends(verify_access_code)])
+async def add_gig(gig: GigCreate, db: Session = Depends(get_db)):
+    new_gig = GigModel(**gig.model_dump())
+    db.add(new_gig)
+    db.commit()
+    db.refresh(new_gig)
+    return new_gig
+
+#Update a gig
+@app.put("/gigs/{id}", dependencies=[Depends(verify_access_code)])
+async def update_gig(id: int, updates: GigUpdate, db: Session = Depends(get_db)):
+    gig = db.query(GigModel).filter(GigModel.id == id).first()
+    if not gig:
+        raise HTTPException(status_code=404, detail="gig not found")
+    if updates.event_name:
+        gig.event_name = updates.event_name
+    if updates.date is not None:
+        gig.date = updates.date
+    if updates.venue is not None:
+        gig.venue = updates.venue or None
+    if updates.performance_time is not None:
+        gig.performance_time = updates.performance_time or None
+    if updates.costume is not None:
+        gig.costume = updates.costume or None
+    if updates.notes is not None:
+        gig.notes = updates.notes or None
+    db.commit()
+    db.refresh(gig)
+    return gig
+
+#Delete a gig
+@app.delete("/gigs/{id}", dependencies=[Depends(verify_access_code)])
+async def delete_gig(id: int, db: Session = Depends(get_db)):
+    gig = db.query(GigModel).filter(GigModel.id == id).first()
+    if not gig:
+        raise HTTPException(status_code=404, detail="gig not found")
+    db.delete(gig)
+    db.commit()
+    return {"Result": f"gig {id} deleted"}
 
