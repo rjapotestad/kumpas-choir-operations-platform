@@ -9,7 +9,6 @@ import {
   getSongs,
   updateSong,
   deleteSong,
-  updateRehearsalPlan,
   addPlanItem,
   updatePlanItem,
   deletePlanItem,
@@ -17,7 +16,7 @@ import {
 import { slotIndexToTime, timeToSlotIndex } from '../utils/timeGrid'
 import { useActivePlan } from '../hooks/useActivePlan'
 
-function RehearsalPlanningView({ planId }) {
+function RehearsalPlanningView({ planId, onDateSelect }) {
   const [editingSong, setEditingSong] = useState(null)
   const [refreshSignal, setRefreshSignal] = useState(0)
   const [songs, setSongs] = useState([])
@@ -128,7 +127,10 @@ function RehearsalPlanningView({ planId }) {
   }
 
   async function handleDateChange(newDate) {
-    await updateRehearsalPlan(activePlan.id, { date: newDate })
+    if (onDateSelect) {
+      await onDateSelect(newDate)
+      return
+    }
     refreshActivePlan()
   }
 

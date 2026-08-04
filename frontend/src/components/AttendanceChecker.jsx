@@ -9,7 +9,7 @@ function sectionLabel(entry) {
   return entry.subsection ? `${initial}${entry.subsection}` : initial
 }
 
-function AttendanceChecker({ planId }) {
+function AttendanceChecker({ planId, onDateSelect }) {
   const { activePlan } = useActivePlan(planId)
   const [roster, setRoster] = useState([])
 
@@ -40,6 +40,12 @@ function AttendanceChecker({ planId }) {
     <div className="attendance-view">
       <div className="attendance-header">
         <h2>Attendance — {activePlan.date}</h2>
+        <input
+          type="date"
+          className="plan-date-input"
+          value={activePlan.date}
+          onChange={(e) => onDateSelect?.(e.target.value)}
+        />
         <button onClick={handleMarkAllPresent}>Mark All Present</button>
       </div>
       <ul className="attendance-roster">

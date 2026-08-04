@@ -300,7 +300,7 @@ async def get_rehearsal_plans(month: str | None = None, db: Session = Depends(ge
             )
         except (ValueError, AttributeError):
             raise HTTPException(status_code=422, detail="month must be in YYYY-MM format")
-    return query.order_by(RehearsalPlanModel.date).all()
+    return query.order_by(RehearsalPlanModel.date, RehearsalPlanModel.id).all()
 
 #Get one rehearsal plan, including its items
 @app.get("/rehearsal-plans/{id}", response_model=RehearsalPlanOut, dependencies=[Depends(verify_access_code)])

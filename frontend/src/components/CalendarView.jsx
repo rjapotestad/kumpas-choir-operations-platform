@@ -11,6 +11,7 @@ function getLocalDateString(d) {
 function CalendarView({ onOpenPlan }) {
   const [cursor, setCursor] = useState(new Date())
   const [plans, setPlans] = useState([])
+  const [creatingDates, setCreatingDates] = useState(new Set())
 
   const year = cursor.getFullYear()
   const month = cursor.getMonth() // 0-indexed
@@ -38,9 +39,24 @@ function CalendarView({ onOpenPlan }) {
     const existing = plansByDate[dateStr]
     if (existing) {
       onOpenPlan(existing.id)
-    } else {
+      return
+    }
+    // Guard against double-clicking an empty date before the first create
+    // request resolves — without this, a quick second click could create
+    // a second plan for the same date before `plans` state updates.
+    if (creatingDates.has(dateStr)) return
+    setCreatingDates((prev) => new Set(prev).add(dateStr))
+
+    try {
       const newPlan = await createRehearsalPlan({ date: dateStr, title: 'Untitled Rehearsal' })
+      setPlans((prev) => [...prev, newPlan]) // keep the calendar's own list in sync immediately
       onOpenPlan(newPlan.id)
+    } finally {
+      setCreatingDates((prev) => {
+        const next = new Set(prev)
+        next.delete(dateStr)
+        return next
+      })
     }
   }
 
