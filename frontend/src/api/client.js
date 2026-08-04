@@ -202,3 +202,15 @@ export async function updateGig(id, updates) {
 export async function deleteGig(id) {
   return apiFetch(`/gigs/${id}`, { method: 'DELETE' })
 }
+
+export async function addGigItem(gigId, item) {
+  return apiFetch(`/gigs/${gigId}/items`, { method: 'POST', body: JSON.stringify(item) })
+}
+
+export async function updateGigItem(gigId, itemId, updates) {
+  return apiFetch(`/gigs/${gigId}/items/${itemId}`, { method: 'PUT', body: JSON.stringify(updates) })
+}
+
+export async function deleteGigItem(gigId, itemId) {
+  return apiFetch(`/gigs/${gigId}/items/${itemId}`, { method: 'DELETE' })
+}

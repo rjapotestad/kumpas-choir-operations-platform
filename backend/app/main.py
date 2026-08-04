@@ -6,7 +6,7 @@ from app.models.song import Song as SongModel
 from app.models.rehearsal_plan import RehearsalPlan as RehearsalPlanModel, RehearsalPlanItem as RehearsalPlanItemModel
 from app.models.member import Member as MemberModel
 from app.models.attendance import Attendance as AttendanceModel
-from app.models.gig import Gig as GigModel
+from app.models.gig import Gig as GigModel, GigItem as GigItemModel
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date as date_type
 from enum import Enum
@@ -200,6 +200,31 @@ class GigUpdate(BaseModel):
     performance_time: str | None = None
     costume: str | None = None
     notes: str | None = None
+
+class GigItemCreate(BaseModel):
+    song_id: int
+    order_index: int
+
+class GigItemUpdate(BaseModel):
+    order_index: int | None = None
+
+class GigItemOut(BaseModel):
+    id: int
+    song_id: int
+    order_index: int
+    song: SongOut
+    model_config = {"from_attributes": True}
+
+class GigOut(BaseModel):
+    id: int
+    event_name: str
+    date: date_type
+    venue: str | None = None
+    performance_time: str | None = None
+    costume: str | None = None
+    notes: str | None = None
+    items: list[GigItemOut] = []
+    model_config = {"from_attributes": True}
 #Print all songs
 @app.get("/songs", dependencies=[Depends(verify_access_code)])
 async def get_songs_db(db: Session = Depends(get_db)):
@@ -623,12 +648,12 @@ async def at_risk_members(db: Session = Depends(get_db)):
     return at_risk
 
 #List all gigs
-@app.get("/gigs", dependencies=[Depends(verify_access_code)])
+@app.get("/gigs", response_model=list[GigOut], dependencies=[Depends(verify_access_code)])
 async def get_gigs(db: Session = Depends(get_db)):
     return db.query(GigModel).order_by(GigModel.date).all()
 
-#Get a single gig
-@app.get("/gigs/{id}", dependencies=[Depends(verify_access_code)])
+#Get a single gig, including its repertoire
+@app.get("/gigs/{id}", response_model=GigOut, dependencies=[Depends(verify_access_code)])
 async def get_gig(id: int, db: Session = Depends(get_db)):
     gig = db.query(GigModel).filter(GigModel.id == id).first()
     if not gig:
@@ -636,7 +661,7 @@ async def get_gig(id: int, db: Session = Depends(get_db)):
     return gig
 
 #Create a gig
-@app.post("/gigs", dependencies=[Depends(verify_access_code)])
+@app.post("/gigs", response_model=GigOut, dependencies=[Depends(verify_access_code)])
 async def add_gig(gig: GigCreate, db: Session = Depends(get_db)):
     new_gig = GigModel(**gig.model_dump())
     db.add(new_gig)
@@ -645,7 +670,7 @@ async def add_gig(gig: GigCreate, db: Session = Depends(get_db)):
     return new_gig
 
 #Update a gig
-@app.put("/gigs/{id}", dependencies=[Depends(verify_access_code)])
+@app.put("/gigs/{id}", response_model=GigOut, dependencies=[Depends(verify_access_code)])
 async def update_gig(id: int, updates: GigUpdate, db: Session = Depends(get_db)):
     gig = db.query(GigModel).filter(GigModel.id == id).first()
     if not gig:
@@ -666,7 +691,7 @@ async def update_gig(id: int, updates: GigUpdate, db: Session = Depends(get_db))
     db.refresh(gig)
     return gig
 
-#Delete a gig
+#Delete a gig (and its repertoire items, via cascade)
 @app.delete("/gigs/{id}", dependencies=[Depends(verify_access_code)])
 async def delete_gig(id: int, db: Session = Depends(get_db)):
     gig = db.query(GigModel).filter(GigModel.id == id).first()
@@ -675,4 +700,48 @@ async def delete_gig(id: int, db: Session = Depends(get_db)):
     db.delete(gig)
     db.commit()
     return {"Result": f"gig {id} deleted"}
+
+#Add a song to a gig's repertoire
+@app.post("/gigs/{id}/items", response_model=GigItemOut, dependencies=[Depends(verify_access_code)])
+async def add_gig_item(id: int, item: GigItemCreate, db: Session = Depends(get_db)):
+    gig = db.query(GigModel).filter(GigModel.id == id).first()
+    if not gig:
+        raise HTTPException(status_code=404, detail="gig not found")
+    song = db.query(SongModel).filter(SongModel.id == item.song_id).first()
+    if not song:
+        raise HTTPException(status_code=404, detail="song not found")
+
+    new_item = GigItemModel(gig_id=id, **item.model_dump())
+    db.add(new_item)
+    db.commit()
+    db.refresh(new_item)
+    return new_item
+
+#Update a repertoire item's order (used for reordering)
+@app.put("/gigs/{id}/items/{item_id}", response_model=GigItemOut, dependencies=[Depends(verify_access_code)])
+async def update_gig_item(id: int, item_id: int, updates: GigItemUpdate, db: Session = Depends(get_db)):
+    item = db.query(GigItemModel).filter(
+        GigItemModel.id == item_id,
+        GigItemModel.gig_id == id,
+    ).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="gig item not found")
+    if updates.order_index is not None:
+        item.order_index = updates.order_index
+    db.commit()
+    db.refresh(item)
+    return item
+
+#Remove a song from a gig's repertoire
+@app.delete("/gigs/{id}/items/{item_id}", dependencies=[Depends(verify_access_code)])
+async def delete_gig_item(id: int, item_id: int, db: Session = Depends(get_db)):
+    item = db.query(GigItemModel).filter(
+        GigItemModel.id == item_id,
+        GigItemModel.gig_id == id,
+    ).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="gig item not found")
+    db.delete(item)
+    db.commit()
+    return {"Result": f"item {item_id} deleted from gig {id}"}
 
