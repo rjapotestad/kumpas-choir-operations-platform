@@ -9,6 +9,7 @@ import {
   getSongs,
   updateSong,
   deleteSong,
+  updateRehearsalPlan,
   addPlanItem,
   updatePlanItem,
   deletePlanItem,

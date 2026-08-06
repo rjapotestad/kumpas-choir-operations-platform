@@ -14,6 +14,7 @@ class Gig(Base):
     notes = Column(String, nullable=True)  # call time, soundcheck time, etc.
 
     items = relationship("GigItem", cascade="all, delete-orphan")
+    attendance_records = relationship("Attendance", cascade="all, delete-orphan")
 
 
 class GigItem(Base):

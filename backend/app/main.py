@@ -519,6 +519,67 @@ async def mark_attendance(id: int, member_id: int, updates: AttendanceUpdate, db
     db.refresh(record)
     return record
 
+#Roster for a gig — same shape as the rehearsal version, keyed to gig_id instead
+@app.get("/gigs/{id}/roster", response_model=list[RosterEntryOut], dependencies=[Depends(verify_access_code)])
+async def get_gig_roster(id: int, db: Session = Depends(get_db)):
+    gig = db.query(GigModel).filter(GigModel.id == id).first()
+    if not gig:
+        raise HTTPException(status_code=404, detail="gig not found")
+
+    members = (
+        db.query(MemberModel)
+        .filter(MemberModel.status != MemberStatus.inactive.value)
+        .order_by(MemberModel.section, MemberModel.subsection, MemberModel.name)
+        .all()
+    )
+    attendance_records = db.query(AttendanceModel).filter(AttendanceModel.gig_id == id).all()
+    attendance_by_member = {a.member_id: a for a in attendance_records}
+
+    roster = []
+    for member in members:
+        record = attendance_by_member.get(member.id)
+        roster.append(RosterEntryOut(
+            member_id=member.id,
+            name=member.name,
+            section=member.section,
+            subsection=member.subsection,
+            status=record.status if record else None,
+            remarks=record.remarks if record else None,
+        ))
+    return roster
+
+#Mark (create or update) one member's attendance/personnel status for a gig
+@app.put("/gigs/{id}/attendance/{member_id}", dependencies=[Depends(verify_access_code)])
+async def mark_gig_attendance(id: int, member_id: int, updates: AttendanceUpdate, db: Session = Depends(get_db)):
+    gig = db.query(GigModel).filter(GigModel.id == id).first()
+    if not gig:
+        raise HTTPException(status_code=404, detail="gig not found")
+
+    member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="member not found")
+
+    record = db.query(AttendanceModel).filter(
+        AttendanceModel.gig_id == id,
+        AttendanceModel.member_id == member_id,
+    ).first()
+
+    if record:
+        record.status = updates.status.value
+        record.remarks = updates.remarks
+    else:
+        record = AttendanceModel(
+            gig_id=id,
+            member_id=member_id,
+            status=updates.status.value,
+            remarks=updates.remarks,
+        )
+        db.add(record)
+
+    db.commit()
+    db.refresh(record)
+    return record
+
 # ---------- Analytics ----------
 # "Attended" = Present or Late (they showed up). "Did not attend" = Absent
 # or Excused (Excused only explains *why*, it doesn't change whether they
