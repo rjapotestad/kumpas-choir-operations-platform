@@ -137,6 +137,9 @@ Song blocks cycle through a small palette derived from these four colors (each b
 ### Calendar
 Month-grid view of rehearsals, navigable by month. Dates with a rehearsal are marked; clicking one opens that exact rehearsal in Rehearsal Planning/Attendance (this is the actual "which plan is active" picker — previously the app only ever showed the first plan it found). Clicking an empty date creates a new rehearsal there.
 
+### Gigs and Personnel
+Create and maintain performance records with their date, venue, performance time, costume, and notes. Each gig has a reorderable repertoire assembled from the Song Library. The Personnel action opens a member picker and a selected-personnel list, so officers can add or remove participating members without taking gig attendance or assigning attendance statuses.
+
 ## API Reference
 
 ### `GET /appinfo`
@@ -251,6 +254,37 @@ GET /rehearsal-plans/1/roster
   { "member_id": 5, "name": "Juan Dela Cruz", "section": "Soprano", "subsection": 1, "status": "Present", "remarks": null },
   { "member_id": 6, "name": "Maria Santos", "section": "Alto", "subsection": null, "status": null, "remarks": null }
 ]
+```
+
+### Gigs and Personnel
+
+A gig stores the event details, an ordered repertoire, and its selected personnel. Gig personnel uses the shared attendance persistence internally, but the product behavior is simply member assignment: the UI adds a selected member and removes them when they are no longer part of the gig.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/gigs` | List all gigs, ordered by date |
+| `GET` | `/gigs/{id}` | Get a gig, including its repertoire items |
+| `POST` | `/gigs` | Create a gig |
+| `PUT` | `/gigs/{id}` | Update a gig's details |
+| `DELETE` | `/gigs/{id}` | Delete a gig, its repertoire, and its personnel records |
+| `POST` | `/gigs/{id}/items` | Add a song to a gig's repertoire |
+| `PUT` | `/gigs/{id}/items/{item_id}` | Update a repertoire item's order |
+| `DELETE` | `/gigs/{id}/items/{item_id}` | Remove a song from a gig's repertoire |
+| `GET` | `/gigs/{id}/roster` | List every non-Inactive member; selected personnel have a non-null record status |
+| `PUT` | `/gigs/{id}/attendance/{member_id}` | Add or update a member's personnel record |
+| `DELETE` | `/gigs/{id}/attendance/{member_id}` | Remove a member from the gig's personnel |
+
+**Gig fields**: `event_name` (required), `date` (required, `YYYY-MM-DD`), `venue`, `performance_time` (`HH:MM`), `costume`, and `notes` (all optional).
+
+Example â€” create a gig:
+```json
+POST /gigs
+{
+  "event_name": "University Christmas Concert",
+  "date": "2026-12-18",
+  "venue": "University Auditorium",
+  "performance_time": "19:00"
+}
 ```
 
 ### Analytics
