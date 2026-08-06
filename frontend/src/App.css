@@ -689,6 +689,67 @@ form button[type="submit"]:hover {
   border-color: var(--color-primary);
 }
 
+.gig-personnel-view {
+  max-width: 900px;
+  padding: 1.25rem 0;
+}
+
+.gig-personnel-view h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.gig-personnel-meta,
+.attendance-error {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.attendance-error {
+  color: var(--color-primary);
+  margin: 0 0 0.75rem;
+}
+
+.gig-personnel-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.gig-personnel-picker {
+  max-width: 480px;
+  margin-bottom: 1rem;
+}
+
+.gig-personnel-picker button {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.gig-personnel-picker button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.gig-personnel-empty {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.gig-personnel-list {
+  max-width: 480px;
+}
+
+.attendance-header button.secondary-action {
+  color: var(--color-text-muted);
+}
+
 .attendance-roster {
   list-style: none;
   padding-left: 0;

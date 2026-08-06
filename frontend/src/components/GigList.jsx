@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getGigs, deleteGig } from '../api/client'
 
-function GigList({ onEdit, onOpenRepertoire, refreshSignal }) {
+function GigList({ onEdit, onOpenRepertoire, onOpenPersonnel, refreshSignal }) {
   const [gigs, setGigs] = useState([])
 
   useEffect(() => {
@@ -24,6 +24,7 @@ function GigList({ onEdit, onOpenRepertoire, refreshSignal }) {
           <span className="member-name">{gig.event_name} — {gig.date}{gig.venue ? ` @ ${gig.venue}` : ''}</span>
           <div className="song-actions">
             <button onClick={() => onOpenRepertoire(gig.id)}>Repertoire</button>
+            <button onClick={() => onOpenPersonnel(gig.id)}>Personnel</button>
             <button onClick={() => onEdit(gig)}>Edit</button>
             <button onClick={() => handleDelete(gig.id)}>Delete</button>
           </div>

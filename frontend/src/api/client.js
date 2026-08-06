@@ -214,3 +214,18 @@ export async function updateGigItem(gigId, itemId, updates) {
 export async function deleteGigItem(gigId, itemId) {
   return apiFetch(`/gigs/${gigId}/items/${itemId}`, { method: 'DELETE' })
 }
+
+export async function getGigRoster(gigId) {
+  return apiFetch(`/gigs/${gigId}/roster`)
+}
+
+export async function markGigAttendance(gigId, memberId, updates) {
+  return apiFetch(`/gigs/${gigId}/attendance/${memberId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  })
+}
+
+export async function removeGigPersonnel(gigId, memberId) {
+  return apiFetch(`/gigs/${gigId}/attendance/${memberId}`, { method: 'DELETE' })
+}

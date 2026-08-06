@@ -580,6 +580,25 @@ async def mark_gig_attendance(id: int, member_id: int, updates: AttendanceUpdate
     db.refresh(record)
     return record
 
+# A gig attendance record also acts as a personnel assignment.  Deleting it
+# lets the UI remove a member from a gig without affecting rehearsal history.
+@app.delete("/gigs/{id}/attendance/{member_id}", dependencies=[Depends(verify_access_code)])
+async def remove_gig_personnel(id: int, member_id: int, db: Session = Depends(get_db)):
+    gig = db.query(GigModel).filter(GigModel.id == id).first()
+    if not gig:
+        raise HTTPException(status_code=404, detail="gig not found")
+
+    record = db.query(AttendanceModel).filter(
+        AttendanceModel.gig_id == id,
+        AttendanceModel.member_id == member_id,
+    ).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="personnel record not found")
+
+    db.delete(record)
+    db.commit()
+    return {"message": "personnel removed"}
+
 # ---------- Analytics ----------
 # "Attended" = Present or Late (they showed up). "Did not attend" = Absent
 # or Excused (Excused only explains *why*, it doesn't change whether they
@@ -805,4 +824,3 @@ async def delete_gig_item(id: int, item_id: int, db: Session = Depends(get_db)):
     db.delete(item)
     db.commit()
     return {"Result": f"item {item_id} deleted from gig {id}"}
-

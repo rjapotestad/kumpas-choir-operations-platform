@@ -44,6 +44,21 @@ def test_mark_gig_attendance_missing_member_returns_404(client):
     assert response.status_code == 404
 
 
+def test_remove_gig_personnel_deletes_only_the_gig_record(client):
+    gig, member = _make_gig_and_member(client)
+    plan = client.post("/rehearsal-plans", json={"date": "2027-03-02"}).json()
+    client.put(f"/gigs/{gig['id']}/attendance/{member['id']}", json={"status": "Present"})
+    client.put(f"/rehearsal-plans/{plan['id']}/attendance/{member['id']}", json={"status": "Absent"})
+
+    response = client.delete(f"/gigs/{gig['id']}/attendance/{member['id']}")
+    assert response.status_code == 200
+
+    gig_entry = next(e for e in client.get(f"/gigs/{gig['id']}/roster").json() if e["member_id"] == member["id"])
+    rehearsal_entry = next(e for e in client.get(f"/rehearsal-plans/{plan['id']}/roster").json() if e["member_id"] == member["id"])
+    assert gig_entry["status"] is None
+    assert rehearsal_entry["status"] == "Absent"
+
+
 def test_gig_and_rehearsal_attendance_are_independent(client):
     # Same member, same day-of-week worth of confusion potential — confirm
     # marking gig attendance never touches rehearsal attendance and vice versa
