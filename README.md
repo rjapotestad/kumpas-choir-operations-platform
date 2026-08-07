@@ -1,9 +1,10 @@
 # Kumpas: A Choir Operations Platform
-![Default dashboard](docs/rehearsal-planner-demo.png)
+![Default dashboard](docs/rehearsal-planner-demo-2.png)
 
 Kumpas is a tool for choir officers to plan rehearsals, manage a song library, and (eventually) track attendance, membership, and music assets — replacing a patchwork of Google Sheets with a single purpose-built app.
 
 **Live**: [kumpas-choir-operations-platform.vercel.app](https://kumpas-choir-operations-platform.vercel.app) (frontend) · [kumpas-6jw2.onrender.com](https://kumpas-6jw2.onrender.com) (backend API, docs at `/docs`)
+**Test Access Code:** artistic direction
 
 > Backend runs on Render's free tier, which spins down after inactivity — the first request after a period of no traffic can take 30–60 seconds to respond while it wakes back up. Not a bug, just the free-tier tradeoff.
 
