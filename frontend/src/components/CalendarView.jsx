@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getRehearsalPlans, createRehearsalPlan } from '../api/client'
+import { getRehearsalPlans, createRehearsalPlan, deleteRehearsalPlan, getGigs } from '../api/client'
 
 function getLocalDateString(d) {
   const year = d.getFullYear()
@@ -8,9 +8,10 @@ function getLocalDateString(d) {
   return `${year}-${month}-${day}`
 }
 
-function CalendarView({ onOpenPlan }) {
+function CalendarView({ onOpenPlan, onOpenGig }) {
   const [cursor, setCursor] = useState(new Date())
   const [plans, setPlans] = useState([])
+  const [gigs, setGigs] = useState([])
   const [creatingDates, setCreatingDates] = useState(new Set())
 
   const year = cursor.getFullYear()
@@ -21,9 +22,24 @@ function CalendarView({ onOpenPlan }) {
     getRehearsalPlans(monthKey).then(setPlans)
   }, [monthKey])
 
+  // Gigs have no month-filtered endpoint (unlike rehearsal plans), and a
+  // choir's gig list is small enough that fetching the full list once and
+  // filtering client-side per cell is simpler than adding backend support.
+  useEffect(() => {
+    getGigs().then(setGigs)
+  }, [])
+
   const plansByDate = {}
   plans.forEach((p) => {
     plansByDate[p.date] = p
+  })
+
+  // Unlike rehearsal plans (one per date by convention), a choir can have
+  // more than one gig on the same date, so this maps to an array.
+  const gigsByDate = {}
+  gigs.forEach((g) => {
+    if (!gigsByDate[g.date]) gigsByDate[g.date] = []
+    gigsByDate[g.date].push(g)
   })
 
   const firstOfMonth = new Date(year, month, 1)
@@ -60,6 +76,11 @@ function CalendarView({ onOpenPlan }) {
     }
   }
 
+  async function handleDeletePlan(planId) {
+    await deleteRehearsalPlan(planId)
+    setPlans((prev) => prev.filter((p) => p.id !== planId))
+  }
+
   return (
     <div className="calendar-view">
       <div className="calendar-header">
@@ -76,20 +97,52 @@ function CalendarView({ onOpenPlan }) {
         {cells.map((day, i) => {
           if (day === null) return <div key={i} className="calendar-cell empty" />
           const dateStr = getLocalDateString(new Date(year, month, day))
-          const hasPlan = Boolean(plansByDate[dateStr])
+          const plan = plansByDate[dateStr]
+          const dayGigs = gigsByDate[dateStr] || []
           return (
-            <button
+            <div
               key={i}
-              className={`calendar-cell ${hasPlan ? 'has-plan' : ''}`}
+              className={`calendar-cell ${plan ? 'has-plan' : ''} ${dayGigs.length ? 'has-gig' : ''}`}
               onClick={() => handleDayClick(day)}
             >
               <span className="calendar-day-number">{day}</span>
-              {hasPlan && <span className="calendar-dot" />}
-            </button>
+              <div className="calendar-cell-events">
+                {plan && (
+                  <div className="calendar-event calendar-event-rehearsal" title={plan.title || 'Rehearsal'}>
+                    <span className="calendar-event-label">{plan.title || 'Rehearsal'}</span>
+                    <button
+                      type="button"
+                      className="calendar-event-delete"
+                      title="Delete rehearsal"
+                      onClick={(e) => {
+                        e.stopPropagation() // don't also trigger the cell's open/create click-through
+                        handleDeletePlan(plan.id)
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+                {dayGigs.map((gig) => (
+                  <button
+                    key={gig.id}
+                    type="button"
+                    className="calendar-event calendar-event-gig"
+                    title={gig.event_name}
+                    onClick={(e) => {
+                      e.stopPropagation() // don't also trigger the cell's rehearsal click-through
+                      onOpenGig(gig.id)
+                    }}
+                  >
+                    {gig.event_name}
+                  </button>
+                ))}
+              </div>
+            </div>
           )
         })}
       </div>
-      <p className="calendar-hint">Click a date to open its rehearsal — creates one if none exists yet.</p>
+      <p className="calendar-hint">Click a date to open its rehearsal (creates one if none exists yet), or click a gig to view its details.</p>
     </div>
   )
 }

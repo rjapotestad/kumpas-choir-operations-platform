@@ -9,6 +9,7 @@
   --color-primary: #ee4004;
   --color-primary-hover: #ff5a1f;
   --color-accent: #f5e439;
+  --color-olivine: #9ab973;
 
   --font-ui: "Roboto", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "Roboto Mono", ui-monospace, monospace;
@@ -197,6 +198,28 @@ body {
 .plan-date-input:focus {
   outline: none;
   border-color: var(--color-primary);
+}
+
+.plan-title-input {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  width: 220px;
+}
+
+.plan-title-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.plan-title-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(238, 64, 4, 0.28);
 }
 
 .time-picker {
@@ -911,6 +934,7 @@ form button[type="submit"]:hover {
 .calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
   text-align: center;
   font-size: 0.72rem;
   color: var(--color-text-muted);
@@ -924,12 +948,18 @@ form button[type="submit"]:hover {
 }
 
 .calendar-cell {
-  aspect-ratio: 1;
+  min-height: 78px;
+  min-width: 0; /* grid items default to min-width:auto, which lets long unbreakable
+                   text (e.g. "Untitled Rehearsal") force the column wider than
+                   its 1fr share and blow the whole grid out past its container —
+                   this override lets the column actually shrink to 1fr so the
+                   existing ellipsis truncation can do its job */
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
+  align-items: stretch;
+  gap: 3px;
+  padding: 4px 3px;
+  box-sizing: border-box;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
@@ -947,17 +977,95 @@ form button[type="submit"]:hover {
   background: transparent;
   border: none;
   cursor: default;
+  min-height: 78px;
 }
 
 .calendar-cell.has-plan {
   border-color: var(--color-primary);
 }
 
-.calendar-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--color-primary);
+.calendar-cell.has-gig {
+  border-color: var(--color-olivine);
+}
+
+.calendar-day-number {
+  text-align: left;
+  padding-left: 2px;
+  flex-shrink: 0;
+}
+
+.calendar-cell-events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.calendar-event {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  line-height: 1.25;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  border: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.calendar-event-rehearsal {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(238, 64, 4, 0.22);
+  color: var(--color-text);
+  cursor: default; /* the whole cell already opens the rehearsal */
+}
+
+.calendar-event-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-event-delete {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.calendar-event-rehearsal:hover .calendar-event-delete {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.calendar-event-delete:hover {
+  color: var(--color-primary);
+}
+
+.calendar-event-gig {
+  background: rgba(154, 185, 115, 0.28);
+  color: var(--color-text);
+}
+
+.calendar-event-gig:hover {
+  background: rgba(154, 185, 115, 0.45);
 }
 
 .calendar-hint {

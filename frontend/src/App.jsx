@@ -11,10 +11,16 @@ import { getRehearsalPlans, createRehearsalPlan } from './api/client'
 function App() {
   const [activeView, setActiveView] = useState('rehearsal')
   const [selectedPlanId, setSelectedPlanId] = useState(null)
+  const [selectedGigId, setSelectedGigId] = useState(null)
 
   function handleOpenPlan(planId) {
     setSelectedPlanId(planId)
     setActiveView('rehearsal')
+  }
+
+  function handleOpenGig(gigId) {
+    setSelectedGigId(gigId)
+    setActiveView('gigs')
   }
 
   // Shared by the date pickers in Rehearsal Planning and Attendance: picking
@@ -46,10 +52,10 @@ function App() {
         </nav>
       </header>
 
-      {activeView === 'calendar' && <CalendarView onOpenPlan={handleOpenPlan} />}
+      {activeView === 'calendar' && <CalendarView onOpenPlan={handleOpenPlan} onOpenGig={handleOpenGig} />}
       {activeView === 'rehearsal' && <RehearsalPlanningView planId={selectedPlanId} onDateSelect={handleDateSelect} />}
       {activeView === 'attendance' && <AttendanceChecker planId={selectedPlanId} onDateSelect={handleDateSelect} />}
-      {activeView === 'gigs' && <GigsView />}
+      {activeView === 'gigs' && <GigsView openGigId={selectedGigId} />}
       {activeView === 'members' && <MembersView />}
       {activeView === 'analytics' && <AnalyticsDashboard />}
     </>

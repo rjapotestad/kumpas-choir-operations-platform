@@ -104,6 +104,10 @@ export async function updateRehearsalPlan(id, updates) {
   })
 }
 
+export async function deleteRehearsalPlan(id) {
+  return apiFetch(`/rehearsal-plans/${id}`, { method: 'DELETE' })
+}
+
 export async function addPlanItem(planId, item) {
   return apiFetch(`/rehearsal-plans/${planId}/items`, {
     method: 'POST',

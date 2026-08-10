@@ -113,7 +113,7 @@ Manage the choir's active song list — add, edit, delete, search, and drag to r
 ### Rehearsal Plan Builder
 A visual, drag-and-drop replacement for planning rehearsals in a spreadsheet.
 
-- **Editable date and time window**: the rehearsal date and a start/end time picker (12-hour, AM/PM) sit centered above the grid — change either and the grid regenerates its rows to match; persists immediately
+- **Editable title, date, and time window**: an optional title (defaults to "Untitled Rehearsal" when blank), the rehearsal date, and a start/end time picker (12-hour, AM/PM) sit centered above the grid — change any of them and it persists immediately (title saves on blur, not per keystroke)
 - **Time grid**: dragging/resizing snaps to 5-minute increments, while the visible time labels only mark every 15 minutes, matching Google Calendar's own convention of sparse labels over a finer grid
 - **Drag a song from the library onto a slot** to place it in the plan
 - **Drag a placed block to a different slot** to move it; dropping onto an occupied slot replaces what's there
@@ -136,7 +136,7 @@ A dark, Calendar-inspired UI built on a four-color brand palette:
 Song blocks cycle through a small palette derived from these four colors (each brand hue plus a tint), keyed to the block's own database ID so a song's color stays consistent across reloads. Typeface is Roboto for UI text and Roboto Mono for time labels, matching Google Calendar's own type system.
 
 ### Calendar
-Month-grid view of rehearsals, navigable by month. Dates with a rehearsal are marked; clicking one opens that exact rehearsal in Rehearsal Planning/Attendance (this is the actual "which plan is active" picker — previously the app only ever showed the first plan it found). Clicking an empty date creates a new rehearsal there.
+Month-grid view of both rehearsals and gigs, navigable by month. Each date shows the actual event title(s) directly on the grid — a rehearsal in a vermilion-tinted chip, gigs in olivine-tinted chips (a date can hold more than one gig) — rather than a plain dot indicator. Clicking a rehearsal opens that exact plan in Rehearsal Planning/Attendance; clicking a gig chip opens its detail (the Gigs tab, pre-loaded into the edit form) instead. Clicking an empty date creates a new rehearsal there. Hovering a rehearsal chip reveals a small × to delete that rehearsal (and its items/attendance) directly from the calendar, without navigating away.
 
 ### Gigs and Personnel
 Create and maintain performance records with their date, venue, performance time, costume, and notes. Each gig has a reorderable repertoire assembled from the Song Library. The Personnel action opens a member picker and a selected-personnel list, so officers can add or remove participating members without taking gig attendance or assigning attendance statuses.
@@ -320,8 +320,8 @@ Kumpas is developed module by module. Current focus:
 
 1. **Rehearsal Planning** — done, live (`v1.0-rehearsal-planning`) — song library, drag-and-drop rehearsal plan builder
 2. **Membership & Attendance** — done, live (`v1.0-membership-attendance`) — member directory, attendance checker, analytics dashboard
-3. **Calendar** ← in progress — month-grid rehearsal navigation (done); extends to Gigs once that module exists
-4. Gigs/Performances/Production
+3. **Calendar** — done, live (`v1.0-calendar`) — month-grid rehearsal navigation; extended to include Gigs as part of that module's own Slice 3
+4. **Gigs/Performances/Production** ← in progress — CRUD, repertoire, personnel, and calendar integration are done; hardening/docs/deploy (Slice 4) remains before tagging `v1.0-gigs`
 5. Seat Plan — attaches to Performances instead of Rehearsals
 6. Music Library
 7. Officer Portal

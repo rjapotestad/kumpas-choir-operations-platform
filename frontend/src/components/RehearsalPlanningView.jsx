@@ -25,6 +25,14 @@ function RehearsalPlanningView({ planId, onDateSelect }) {
   const { activePlan, refreshActivePlan } = useActivePlan(planId)
   const gridSectionRef = useRef(null)
   const [libraryHeight, setLibraryHeight] = useState(null)
+  const [titleDraft, setTitleDraft] = useState('')
+
+  // Local draft so typing doesn't fire a request per keystroke — persisted
+  // on blur instead. Only resyncs when the loaded plan itself changes (not
+  // on every refreshActivePlan call), so it doesn't clobber an in-progress edit.
+  useEffect(() => {
+    setTitleDraft(activePlan?.title || '')
+  }, [activePlan?.id])
 
   function handleSaved() {
     setEditingSong(null)
@@ -145,6 +153,17 @@ function RehearsalPlanningView({ planId, onDateSelect }) {
     refreshActivePlan()
   }
 
+  async function handleTitleBlur() {
+    if (!activePlan) return
+    const trimmed = titleDraft.trim()
+    if (trimmed === (activePlan.title || '')) return // unchanged, skip the request
+    // Send "" rather than null to clear the title — the backend's PUT only
+    // applies title when `updates.title is not None` (see decisions.md), so
+    // null would silently no-op instead of clearing it.
+    await updateRehearsalPlan(activePlan.id, { title: trimmed })
+    refreshActivePlan()
+  }
+
   // Measure the actual rendered height of the header+grid section, so the
   // library sidebar can match it exactly (extend down to the grid's 8PM
   // line) rather than guessing a pixel value that drifts if the grid's
@@ -182,6 +201,14 @@ function RehearsalPlanningView({ planId, onDateSelect }) {
               <h2>Rehearsal Plan</h2>
               {activePlan && (
                 <div className="builder-column-controls">
+                  <input
+                    type="text"
+                    className="plan-title-input"
+                    placeholder="Untitled Rehearsal"
+                    value={titleDraft}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    onBlur={handleTitleBlur}
+                  />
                   <input
                     type="date"
                     className="plan-date-input"
