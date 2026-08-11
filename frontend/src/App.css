@@ -177,6 +177,13 @@ body {
   box-sizing: border-box;
 }
 
+.builder-column-title-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .builder-column-controls {
   display: flex;
   align-items: center;
@@ -210,6 +217,7 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   width: 220px;
+  text-align: center;
 }
 
 .plan-title-input::placeholder {
@@ -429,13 +437,13 @@ form button[type="submit"]:hover {
 }
 
 .time-gutter-row {
-  height: 16px;
+  height: 30px;
   box-sizing: border-box;
   position: relative;
 }
 
 .time-slot {
-  height: 16px;
+  height: 30px;
   box-sizing: border-box;
   border-bottom: 1px solid var(--color-border);
 }
@@ -492,6 +500,11 @@ form button[type="submit"]:hover {
   gap: 8px;
   min-width: 0;
   width: 100%;
+}
+
+.song-block-header-spacer {
+  width: 18px;
+  flex-shrink: 0;
 }
 
 .song-block-title {

@@ -121,6 +121,11 @@ function PlacedItemOverlay({ item, onRemoveItem, onResizeItem, startTime, totalS
     <div className="song-block" style={style} ref={setNodeRef} {...listeners} {...attributes}>
       <div className="song-block-content">
         <div className="song-block-header">
+          {/* Invisible spacer matching the delete button's width — without it,
+              the title's flex:1 box is narrower on the right (button) than
+              the left (nothing), so text-align:center only centers within
+              that shrunk box, not the full block. This balances both sides. */}
+          <span className="song-block-header-spacer" aria-hidden="true" />
           <span className="song-block-title">
             {item.song.title}
             <span className="duration-label"> {span * SLOT_MINUTES} min</span>

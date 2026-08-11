@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { getRehearsalPlans, createRehearsalPlan, getRehearsalPlan } from '../api/client'
 
+// Remembers whichever plan was last opened (by id), so a fresh page load
+// (no planId prop, i.e. not arriving via Calendar/date-picker) reopens that
+// same plan/date instead of always falling back to the earliest-dated one.
+const LAST_PLAN_ID_KEY = 'kumpas_last_rehearsal_plan_id'
+
 function getLocalDateString() {
   const now = new Date()
   const year = now.getFullYear()
@@ -26,7 +31,10 @@ export function useActivePlan(planId = null) {
   useEffect(() => {
     if (planId) {
       getRehearsalPlan(planId).then((data) => {
-        if (currentPlanIdRef.current === planId) setActivePlan(data)
+        if (currentPlanIdRef.current === planId) {
+          setActivePlan(data)
+          localStorage.setItem(LAST_PLAN_ID_KEY, String(planId))
+        }
       })
       return
     }
@@ -35,15 +43,30 @@ export function useActivePlan(planId = null) {
     loadStartedRef.current = true
 
     async function loadOrCreatePlan() {
-      const plans = await getRehearsalPlans()
-      if (plans.length > 0) {
-        currentPlanIdRef.current = plans[0].id
-        setActivePlan(plans[0])
-      } else {
-        const newPlan = await createRehearsalPlan({ date: getLocalDateString(), title: 'Untitled Rehearsal' })
-        currentPlanIdRef.current = newPlan.id
-        setActivePlan(newPlan)
+      // Prefer reopening whichever plan was last accessed (any session,
+      // any tab) over always defaulting to the earliest-dated plan.
+      const lastPlanId = localStorage.getItem(LAST_PLAN_ID_KEY)
+      if (lastPlanId) {
+        try {
+          const lastPlan = await getRehearsalPlan(Number(lastPlanId))
+          currentPlanIdRef.current = lastPlan.id
+          setActivePlan(lastPlan)
+          return
+        } catch {
+          // Plan no longer exists (e.g. deleted) — fall through to the
+          // usual "first plan, or create one" logic below.
+        }
       }
+
+      const plans = await getRehearsalPlans()
+      const plan =
+        plans.length > 0
+          ? plans[0]
+          : await createRehearsalPlan({ date: getLocalDateString(), title: 'Untitled Rehearsal' })
+
+      currentPlanIdRef.current = plan.id
+      setActivePlan(plan)
+      localStorage.setItem(LAST_PLAN_ID_KEY, String(plan.id))
     }
     loadOrCreatePlan()
   }, [planId])

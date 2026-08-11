@@ -1,7 +1,9 @@
 // frontend/src/utils/timeGrid.js
 export const SLOT_MINUTES = 5
 export const LABEL_EVERY_N_SLOTS = 3   // labels shown every 3 slots = every 15 min
-export const ROW_HEIGHT = 16           // px — must match .time-slot's height in App.css
+export const ROW_HEIGHT = 30           // px — must match .time-slot's height in App.css. Bumped
+                                        // from 16px so a single 5-min block (1 row) still has
+                                        // room to show a readable line of text.
 
 function parseTimeToMinutes(time) {
   const [hour, minute] = time.split(':').map(Number)

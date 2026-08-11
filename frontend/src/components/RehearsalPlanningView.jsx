@@ -198,9 +198,9 @@ function RehearsalPlanningView({ planId, onDateSelect }) {
         <div className="builder-column">
           <div ref={gridSectionRef}>
             <div className="builder-column-header">
-              <h2>Rehearsal Plan</h2>
-              {activePlan && (
-                <div className="builder-column-controls">
+              <div className="builder-column-title-row">
+                <h2>Rehearsal Plan</h2>
+                {activePlan && (
                   <input
                     type="text"
                     className="plan-title-input"
@@ -209,6 +209,10 @@ function RehearsalPlanningView({ planId, onDateSelect }) {
                     onChange={(e) => setTitleDraft(e.target.value)}
                     onBlur={handleTitleBlur}
                   />
+                )}
+              </div>
+              {activePlan && (
+                <div className="builder-column-controls">
                   <input
                     type="date"
                     className="plan-date-input"
