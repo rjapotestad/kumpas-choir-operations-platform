@@ -8,4 +8,5 @@ class Song(Base):
     title = Column(String, nullable=False)
     composer_arranger = Column(String, nullable=True)
     notes = Column(String, nullable=True)
+    genre = Column(String, nullable=True)  # free-text (e.g. "Sacred", "Folk") - nullable, songs without one group under "Uncategorized" in the UI
     order_index = Column(Integer, nullable=True)  # nullable so existing rows aren't broken; NULLs sort last, by id, until first reorder

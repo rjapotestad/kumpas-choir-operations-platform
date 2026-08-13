@@ -48,11 +48,13 @@ class SongCreate(BaseModel):
     title:str
     composer_arranger:str|None = None
     notes:str|None = None
+    genre:str|None = None
 
 class SongUpdate(BaseModel):
     title:str|None = None
     composer_arranger:str|None = None
     notes:str|None = None
+    genre:str|None = None
     order_index:int|None = None
 class RehearsalPlanCreate(BaseModel):
     date: date_type
@@ -87,6 +89,7 @@ class SongOut(BaseModel):
     title: str
     composer_arranger: str | None = None
     notes: str | None = None
+    genre: str | None = None
     model_config = {"from_attributes": True}
 
 class RehearsalPlanItemOut(BaseModel):
@@ -257,6 +260,8 @@ async def update_song(id:int, updates: SongUpdate, db: Session = Depends(get_db)
         song.composer_arranger = updates.composer_arranger or None
     if updates.notes is not None:
         song.notes = updates.notes or None
+    if updates.genre is not None:
+        song.genre = updates.genre or None
     if updates.order_index is not None:
         song.order_index = updates.order_index
     db.commit()

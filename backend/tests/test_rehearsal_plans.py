@@ -135,3 +135,36 @@ def test_update_rehearsal_plan_date(client):
 def test_update_rehearsal_plan_not_found(client):
     response = client.put("/rehearsal-plans/9999", json={"date": "2026-09-12"})
     assert response.status_code == 404
+
+
+def test_update_rehearsal_plan_title(client):
+    plan = client.post("/rehearsal-plans", json={"date": "2026-09-19"}).json()
+    assert plan["title"] is None  # defaults to untitled, matches the UI's "Untitled Rehearsal" placeholder
+
+    response = client.put(f"/rehearsal-plans/{plan['id']}", json={"title": "Section Sprint"})
+    assert response.status_code == 200
+    assert response.json()["title"] == "Section Sprint"
+
+
+def test_clear_rehearsal_plan_title(client):
+    # Regression test for the null-vs-empty-string gotcha (see decisions.md):
+    # the endpoint only applies an update when `updates.title is not None`, so
+    # clearing a title back to blank must be sent as "", not `null` — this
+    # confirms that path actually clears the field rather than silently no-op'ing.
+    plan = client.post("/rehearsal-plans", json={"date": "2026-09-20", "title": "Has A Title"}).json()
+
+    response = client.put(f"/rehearsal-plans/{plan['id']}", json={"title": ""})
+    assert response.status_code == 200
+    assert response.json()["title"] == ""
+
+
+def test_delete_rehearsal_plan(client):
+    plan = client.post("/rehearsal-plans", json={"date": "2026-09-26"}).json()
+    response = client.delete(f"/rehearsal-plans/{plan['id']}")
+    assert response.status_code == 200
+    assert client.get(f"/rehearsal-plans/{plan['id']}").status_code == 404
+
+
+def test_delete_rehearsal_plan_not_found(client):
+    response = client.delete("/rehearsal-plans/9999")
+    assert response.status_code == 404

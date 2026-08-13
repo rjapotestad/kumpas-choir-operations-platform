@@ -65,6 +65,36 @@ def test_delete_song_not_found(client):
     assert response.status_code == 404
 
 
+def test_create_song_with_genre(client):
+    response = client.post(
+        "/songs",
+        json={"title": "Sicut Cervus", "composer_arranger": "Palestrina", "genre": "Sacred"},
+    )
+    assert response.status_code == 200
+    assert response.json()["genre"] == "Sacred"
+
+
+def test_update_song_genre(client):
+    create = client.post("/songs", json={"title": "Untagged Song"})
+    song_id = create.json()["id"]
+    assert create.json()["genre"] is None
+
+    response = client.put(f"/songs/{song_id}", json={"genre": "Folk"})
+    assert response.status_code == 200
+    assert response.json()["genre"] == "Folk"
+
+
+def test_clear_song_genre(client):
+    # Sending "" (not null) is how the frontend clears a nullable field —
+    # `is not None` on the backend treats null as "leave unchanged" (see decisions.md)
+    create = client.post("/songs", json={"title": "Genre To Clear", "genre": "Pop"})
+    song_id = create.json()["id"]
+
+    response = client.put(f"/songs/{song_id}", json={"genre": ""})
+    assert response.status_code == 200
+    assert response.json()["genre"] is None
+
+
 def test_song_order_index_affects_listing_order(client):
     # Create three songs, then explicitly reorder them via order_index —
     # confirms GET /songs actually respects it, not just accepts it

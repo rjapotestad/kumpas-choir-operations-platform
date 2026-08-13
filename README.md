@@ -108,7 +108,9 @@ Always review the generated migration file before applying it — autogenerate c
 ## Features
 
 ### Song Library
-Manage the choir's active song list — add, edit, delete, search, and drag to reorder. Updates reflect instantly in the rehearsal plan builder below, no manual refresh needed (including live edits to a song's title/composer/notes, even while it's currently placed on the plan). Edit/Delete actions appear on hover to keep the list visually clean. A search box filters by title/composer as you type; the underlying order is preserved under the hood, so reordering still works correctly even while a search filter is active. The sidebar's height matches the rehearsal grid's rendered height exactly (measured, not guessed), and the song list scrolls internally once it's too long to fit — the page itself never grows past that. Deleting a song currently placed in a rehearsal plan is blocked with a clear message, rather than failing silently.
+Manage the choir's active song list — add, edit, delete, search, and drag to reorder. Updates reflect instantly in the rehearsal plan builder below, no manual refresh needed (including live edits to a song's title/composer/notes, even while it's currently placed on the plan). Edit/Delete actions appear on hover to keep the list visually clean. A search box filters by title/composer/genre as you type; the underlying order is preserved under the hood, so reordering still works correctly even while a search filter is active. Songs can carry an optional free-text genre/category (e.g. "Sacred", "Folk") with autocomplete suggested from genres already in use. A "Sort by" control switches the list between Manual order (drag-to-reorder, the default) and Genre (grouped under alphabetical headers with a per-group count, "Uncategorized" last) — songs stay draggable onto the rehearsal grid in either mode, but drag-*reordering* the library itself is Manual-mode only. The sidebar's height matches the rehearsal grid's rendered height exactly (measured, not guessed), and the song list scrolls internally once it's too long to fit — the page itself never grows past that. Deleting a song currently placed in a rehearsal plan is blocked with a clear message, rather than failing silently.
+
+The **Library tab** offers the same add/edit/search/sort/delete tools as a standalone full-page view, for browsing or maintaining the whole library without a rehearsal plan open — the Rehearsal Planning sidebar remains the place to actually drag songs into a plan.
 
 ### Rehearsal Plan Builder
 A visual, drag-and-drop replacement for planning rehearsals in a spreadsheet.
@@ -156,7 +158,7 @@ Returns basic app metadata (name, version, status).
 | `PUT` | `/songs/{id}` | Update a song (any subset of fields) |
 | `DELETE` | `/songs/{id}` | Delete a song |
 
-**Song fields**: `title` (required), `composer_arranger` (optional), `notes` (optional), `order_index` (optional, used for sidebar drag-reordering)
+**Song fields**: `title` (required), `composer_arranger` (optional), `notes` (optional), `genre` (optional, free text — used for grouping/sorting in the UI), `order_index` (optional, used for sidebar drag-reordering)
 
 Example — create a song:
 ```json
@@ -164,7 +166,8 @@ POST /songs
 {
   "title": "Ave Maria",
   "composer_arranger": "Franz Biebl",
-  "notes": "double choir"
+  "notes": "double choir",
+  "genre": "Sacred"
 }
 ```
 
@@ -321,9 +324,9 @@ Kumpas is developed module by module. Current focus:
 1. **Rehearsal Planning** — done, live (`v1.0-rehearsal-planning`) — song library, drag-and-drop rehearsal plan builder
 2. **Membership & Attendance** — done, live (`v1.0-membership-attendance`) — member directory, attendance checker, analytics dashboard
 3. **Calendar** — done, live (`v1.0-calendar`) — month-grid rehearsal navigation; extended to include Gigs as part of that module's own Slice 3
-4. **Gigs/Performances/Production** ← in progress — CRUD, repertoire, personnel, and calendar integration are done; hardening/docs/deploy (Slice 4) remains before tagging `v1.0-gigs`
-5. Seat Plan — attaches to Performances instead of Rehearsals
-6. Music Library
+4. **Gigs/Performances/Production** — done, live (`v1.0-gigs`) — CRUD, repertoire, personnel, and calendar integration
+5. **Music Library** ← in progress — genre/category field + sort, standalone Library tab; still open: attaching a music-piece link/file to each song
+6. Seat Plan — attaches to Performances instead of Rehearsals
 7. Officer Portal
 8. Member Portal
 

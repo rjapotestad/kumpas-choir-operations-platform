@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { DndContext } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
 import SongList from './SongList'
@@ -22,6 +22,7 @@ function RehearsalPlanningView({ planId, onDateSelect }) {
   const [refreshSignal, setRefreshSignal] = useState(0)
   const [songs, setSongs] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortMode, setSortMode] = useState('manual') // 'manual' | 'genre'
   const { activePlan, refreshActivePlan } = useActivePlan(planId)
   const gridSectionRef = useRef(null)
   const [libraryHeight, setLibraryHeight] = useState(null)
@@ -48,6 +49,14 @@ function RehearsalPlanningView({ planId, onDateSelect }) {
     getSongs().then(setSongs)
   }, [refreshSignal])
 
+  // Genres already in use, for the song form's autocomplete suggestions —
+  // derived from the loaded library rather than a separate endpoint, since
+  // the full list is already in memory here.
+  const existingGenres = useMemo(
+    () => [...new Set(songs.map((s) => s.genre).filter(Boolean))].sort(),
+    [songs]
+  )
+
   async function handleDeleteSong(id) {
     try {
       await deleteSong(id)
@@ -64,8 +73,11 @@ function RehearsalPlanningView({ planId, onDateSelect }) {
     const activeIsSong = typeof active.id === 'string' && active.id.startsWith('song-')
     const overIsSong = typeof over.id === 'string' && over.id.startsWith('song-')
 
-    // Case 1: reordering the song library sidebar itself
-    if (activeIsSong && overIsSong) {
+    // Case 1: reordering the song library sidebar itself — only meaningful
+    // in Manual order mode; grouped-by-genre songs aren't sortable targets
+    // (see SongList), so `overIsSong` won't fire for them anyway, but guard
+    // explicitly for clarity.
+    if (sortMode === 'manual' && activeIsSong && overIsSong) {
       if (active.id === over.id) return // dropped back on itself, no-op
 
       const oldIndex = songs.findIndex((s) => `song-${s.id}` === active.id)
@@ -184,7 +196,7 @@ function RehearsalPlanningView({ planId, onDateSelect }) {
       <div className="app-layout">
         <div className="library-column" style={{ height: libraryHeight ? `${libraryHeight}px` : undefined }}>
           <h2>Song Library</h2>
-          <SongForm existingSong={editingSong} onSaved={handleSaved} />
+          <SongForm existingSong={editingSong} onSaved={handleSaved} existingGenres={existingGenres} />
           <input
             type="text"
             className="song-search-input"
@@ -192,7 +204,20 @@ function RehearsalPlanningView({ planId, onDateSelect }) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <SongList songs={songs} onEdit={setEditingSong} onDelete={handleDeleteSong} searchQuery={searchQuery} />
+          <div className="song-sort-control">
+            <label htmlFor="song-sort-select">Sort by</label>
+            <select id="song-sort-select" value={sortMode} onChange={(e) => setSortMode(e.target.value)}>
+              <option value="manual">Manual order</option>
+              <option value="genre">Genre</option>
+            </select>
+          </div>
+          <SongList
+            songs={songs}
+            onEdit={setEditingSong}
+            onDelete={handleDeleteSong}
+            searchQuery={searchQuery}
+            groupByGenre={sortMode === 'genre'}
+          />
         </div>
 
         <div className="builder-column">
