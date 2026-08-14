@@ -17,3 +17,8 @@ test.db
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Local bats
+migrate-neon.bat
+pull-from-neon.bat
+start-kumpas.bat
