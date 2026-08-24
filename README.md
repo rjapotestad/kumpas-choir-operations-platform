@@ -123,6 +123,7 @@ A visual, drag-and-drop replacement for planning rehearsals in a spreadsheet.
 - **Resize** a placed block by dragging the thin handle at its bottom edge — stretches/shrinks in 5-minute increments, updating its duration live as you drag
 - **Composer/arranger and notes** (if set on the song) display on its block beneath the title, centered and adapting as the block resizes
 - **Remove** a block with the × button
+- **Copy Plan as Image**: copies the plan header (title, date, time window) and the full time grid — including its side labels — straight to your clipboard as an image, ready to paste into a chat or doc. Falls back to a PNG download in browsers that don't support image clipboard writes.
 - Everything persists to Postgres immediately — no separate "save" step, and the arrangement survives a page reload
 - Navigate between rehearsals via the Calendar tab — clicking a date opens that specific plan here
 

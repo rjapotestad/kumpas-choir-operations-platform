@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { DndContext } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
+import { toBlob, toPng } from 'html-to-image'
 import SongList from './SongList'
 import SongForm from './SongForm'
 import TimeSlotGrid from './TimeSlotGrid'
@@ -27,6 +28,7 @@ function RehearsalPlanningView({ planId, onDateSelect }) {
   const gridSectionRef = useRef(null)
   const [libraryHeight, setLibraryHeight] = useState(null)
   const [titleDraft, setTitleDraft] = useState('')
+  const [copyStatus, setCopyStatus] = useState('idle') // 'idle' | 'copying' | 'copied' | 'error'
 
   // Local draft so typing doesn't fire a request per keystroke — persisted
   // on blur instead. Only resyncs when the loaded plan itself changes (not
@@ -165,6 +167,58 @@ function RehearsalPlanningView({ planId, onDateSelect }) {
     refreshActivePlan()
   }
 
+  // Copies the plan header + time grid (title, date/time controls, and the
+  // time-labelled grid with placed songs) as a PNG — the "whole frame" a
+  // director would otherwise screenshot manually to share the rehearsal
+  // plan. Clipboard image writes are preferred (no file to manage/attach);
+  // browsers that don't support ClipboardItem fall back to a download.
+  async function handleCopyImage() {
+    if (!gridSectionRef.current) return
+    setCopyStatus('copying')
+    try {
+      // Explicit background — the captured node itself has no background of
+      // its own (it relies on the page behind it), so without this the PNG
+      // would come out with a transparent gap around the header/grid.
+      // Extra top/bottom room, so the gutter's time labels don't get
+      // clipped: they're vertically centered on each row's boundary via
+      // `translateY(-50%)`, so the very first label sticks up above the
+      // grid's own box and the last (boundary) label sticks down below it.
+      // Padding alone isn't enough — html-to-image sizes its output canvas
+      // from the *original* (unpadded) node's dimensions, so a clone-only
+      // `style.padding` just overflows that fixed-size canvas and gets
+      // clipped anyway (this is what made the bottom label disappear
+      // entirely after the first padding attempt). Explicitly passing a
+      // taller `height` alongside the padding grows the canvas to match.
+      const extraPadding = 14
+      const rect = gridSectionRef.current.getBoundingClientRect()
+      const options = {
+        backgroundColor: '#042a37',
+        pixelRatio: 2,
+        width: Math.ceil(rect.width),
+        height: Math.ceil(rect.height) + extraPadding * 2,
+        style: { paddingTop: `${extraPadding}px`, paddingBottom: `${extraPadding}px` },
+      }
+      if (navigator.clipboard?.write && window.ClipboardItem) {
+        const blob = await toBlob(gridSectionRef.current, options)
+        if (!blob) throw new Error('Could not generate image')
+        await navigator.clipboard.write([new window.ClipboardItem({ 'image/png': blob })])
+        setCopyStatus('copied')
+      } else {
+        const dataUrl = await toPng(gridSectionRef.current, options)
+        const link = document.createElement('a')
+        link.download = `rehearsal-plan-${activePlan?.date || 'plan'}.png`
+        link.href = dataUrl
+        link.click()
+        setCopyStatus('downloaded')
+      }
+    } catch (error) {
+      console.error('Failed to copy rehearsal plan image', error)
+      setCopyStatus('error')
+    } finally {
+      setTimeout(() => setCopyStatus('idle'), 1800)
+    }
+  }
+
   async function handleTitleBlur() {
     if (!activePlan) return
     const trimmed = titleDraft.trim()
@@ -262,6 +316,15 @@ function RehearsalPlanningView({ planId, onDateSelect }) {
               <p>Loading plan...</p>
             )}
           </div>
+          {activePlan && (
+            <button type="button" onClick={handleCopyImage} disabled={copyStatus === 'copying'}>
+              {copyStatus === 'copying' && 'Copying...'}
+              {copyStatus === 'copied' && 'Copied to clipboard!'}
+              {copyStatus === 'downloaded' && 'Downloaded!'}
+              {copyStatus === 'error' && "Couldn't copy — try again"}
+              {copyStatus === 'idle' && 'Copy Plan as Image'}
+            </button>
+          )}
         </div>
       </div>
     </DndContext>
