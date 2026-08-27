@@ -1048,7 +1048,7 @@ form button[type="submit"]:hover {
 
 .calendar-view {
   padding: 1.5rem 2rem;
-  max-width: 700px;
+  max-width: 1080px;
   margin: 0 auto;
 }
 
@@ -1093,17 +1093,17 @@ form button[type="submit"]:hover {
 }
 
 .calendar-cell {
-  min-height: 78px;
+  min-height: 130px;
   min-width: 0; /* grid items default to min-width:auto, which lets long unbreakable
                    text (e.g. "Untitled Rehearsal") force the column wider than
                    its 1fr share and blow the whole grid out past its container —
-                   this override lets the column actually shrink to 1fr so the
-                   existing ellipsis truncation can do its job */
+                   this override lets the column actually shrink to 1fr so wrapping/
+                   ellipsis truncation can do its job */
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 3px;
-  padding: 4px 3px;
+  padding: 6px 5px;
   box-sizing: border-box;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -1122,7 +1122,7 @@ form button[type="submit"]:hover {
   background: transparent;
   border: none;
   cursor: default;
-  min-height: 78px;
+  min-height: 130px;
 }
 
 .calendar-cell.has-plan {
@@ -1153,20 +1153,20 @@ form button[type="submit"]:hover {
   box-sizing: border-box;
   text-align: left;
   font-family: var(--font-ui);
-  font-size: 0.68rem;
-  line-height: 1.25;
-  padding: 1px 5px;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  padding: 2px 6px;
   border-radius: var(--radius-sm);
   border: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
   cursor: pointer;
 }
 
 .calendar-event-rehearsal {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 3px;
   background: rgba(238, 64, 4, 0.22);
   color: var(--color-text);
@@ -1177,8 +1177,12 @@ form button[type="submit"]:hover {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
 .calendar-event-delete {
@@ -1193,6 +1197,7 @@ form button[type="submit"]:hover {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.12s ease;
+  margin-top: 1px;
 }
 
 .calendar-event-rehearsal:hover .calendar-event-delete {
