@@ -932,49 +932,73 @@ form button[type="submit"]:hover {
   border-bottom: 1px solid var(--color-border);
 }
 
-.attendance-status-buttons {
+.attendance-status-select {
   margin-left: auto;
-  display: flex;
-  gap: 0.35rem;
-}
-
-.attendance-status-buttons button {
   font-family: var(--font-ui);
-  font-size: 0.75rem;
-  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.55rem;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
-  background: transparent;
+  background: var(--color-bg);
   color: var(--color-text-muted);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
-.attendance-status-buttons button:hover {
+.attendance-status-select:focus {
+  outline: none;
   border-color: var(--color-primary);
 }
 
-.attendance-status-buttons button.active.status-present {
+.attendance-status-select.status-present {
   background: #53863b;
   border-color: #53863b;
   color: #fff;
 }
 
-.attendance-status-buttons button.active.status-absent {
+.attendance-status-select.status-absent {
   background: #EE4004;
   border-color: #EE4004;
   color: #fff;
 }
 
-.attendance-status-buttons button.active.status-excused {
+.attendance-status-select.status-excused {
   background: #F5E439;
   border-color: #F5E439;
   color: #042a37;
 }
 
-.attendance-status-buttons button.active.status-late {
+.attendance-status-select.status-late {
   background: #f97144;
   border-color: #f97144;
   color: #042a37;
+}
+
+.attendance-remarks-input {
+  width: 180px;
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  outline: none;
+}
+
+.attendance-remarks-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.attendance-remarks-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(238, 64, 4, 0.28);
+}
+
+.attendance-remarks-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ---------- Analytics view ---------- */

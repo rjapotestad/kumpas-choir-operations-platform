@@ -43,6 +43,68 @@ function groupRosterBySection(roster) {
   return orderedSections.map((section) => ({ section, entries: groups.get(section) }))
 }
 
+// One roster row: a status dropdown + a remarks input, per member.
+// Remarks are kept in local state (rather than lifted up) so typing doesn't
+// force a re-render/refetch of the whole roster on every keystroke — they're
+// only persisted on blur (or when Enter is pressed), same "immediate
+// persistence, no explicit save button" convention as the rest of the app,
+// just debounced to "done typing" instead of "every keystroke" for a text field.
+function RosterRow({ entry, onMark }) {
+  const [remarks, setRemarks] = useState(entry.remarks || '')
+
+  // Keep local draft in sync if the underlying record changes from outside
+  // this row (e.g. "Mark All Present"), but don't clobber the row while
+  // someone is actively typing in it.
+  useEffect(() => {
+    setRemarks(entry.remarks || '')
+  }, [entry.remarks])
+
+  function handleStatusChange(e) {
+    const status = e.target.value
+    if (!status) return
+    onMark(entry.member_id, status, remarks)
+  }
+
+  function commitRemarks() {
+    if (!entry.status) return // no record to attach remarks to until a status is picked
+    if (remarks === (entry.remarks || '')) return // nothing changed, skip the round-trip
+    onMark(entry.member_id, entry.status, remarks)
+  }
+
+  return (
+    <li>
+      <span className="member-section-badge">{sectionLabel(entry)}</span>
+      <span className="member-name">{entry.name}</span>
+      <select
+        className={`attendance-status-select${entry.status ? ` status-${entry.status.toLowerCase()}` : ''}`}
+        value={entry.status || ''}
+        onChange={handleStatusChange}
+      >
+        <option value="" disabled>
+          Mark...
+        </option>
+        {STATUS_OPTIONS.map((status) => (
+          <option key={status} value={status}>
+            {status}
+          </option>
+        ))}
+      </select>
+      <input
+        type="text"
+        className="attendance-remarks-input"
+        placeholder={entry.status ? 'Remarks (optional)' : 'Mark status first'}
+        value={remarks}
+        disabled={!entry.status}
+        onChange={(e) => setRemarks(e.target.value)}
+        onBlur={commitRemarks}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.target.blur()
+        }}
+      />
+    </li>
+  )
+}
+
 function AttendanceChecker({ planId, onDateSelect }) {
   const { activePlan } = useActivePlan(planId)
   const [roster, setRoster] = useState([])
@@ -58,13 +120,17 @@ function AttendanceChecker({ planId, onDateSelect }) {
     setRoster(updated)
   }
 
-  async function handleMark(memberId, status) {
-    await markAttendance(activePlan.id, memberId, { status })
+  async function handleMark(memberId, status, remarks) {
+    await markAttendance(activePlan.id, memberId, { status, remarks: remarks || null })
     refreshRoster()
   }
 
   async function handleMarkAllPresent() {
-    await Promise.all(roster.map((entry) => markAttendance(activePlan.id, entry.member_id, { status: 'Present' })))
+    await Promise.all(
+      roster.map((entry) =>
+        markAttendance(activePlan.id, entry.member_id, { status: 'Present', remarks: entry.remarks || null })
+      )
+    )
     refreshRoster()
   }
 
@@ -93,21 +159,7 @@ function AttendanceChecker({ planId, onDateSelect }) {
             </h3>
             <ul className="attendance-roster">
               {entries.map((entry) => (
-                <li key={entry.member_id}>
-                  <span className="member-section-badge">{sectionLabel(entry)}</span>
-                  <span className="member-name">{entry.name}</span>
-                  <div className="attendance-status-buttons">
-                    {STATUS_OPTIONS.map((status) => (
-                      <button
-                        key={status}
-                        className={entry.status === status ? `active status-${status.toLowerCase()}` : ''}
-                        onClick={() => handleMark(entry.member_id, status)}
-                      >
-                        {status}
-                      </button>
-                    ))}
-                  </div>
-                </li>
+                <RosterRow key={entry.member_id} entry={entry} onMark={handleMark} />
               ))}
             </ul>
           </div>
