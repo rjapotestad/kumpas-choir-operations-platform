@@ -43,6 +43,17 @@ function groupRosterBySection(roster) {
   return orderedSections.map((section) => ({ section, entries: groups.get(section) }))
 }
 
+// Members who were marked Late or Excused AND left a remark — the "asked
+// permission" cases a rehearsal lead actually needs to scan at a glance.
+// Present/Absent-with-remarks and remark-less Late/Excused entries aren't
+// what this summary is for, so both are left out.
+function getRemarksSummary(roster) {
+  const flagged = roster.filter(
+    (entry) => (entry.status === 'Late' || entry.status === 'Excused') && entry.remarks?.trim()
+  )
+  return groupRosterBySection(flagged)
+}
+
 // One roster row: a status dropdown + a remarks input, per member.
 // Remarks are kept in local state (rather than lifted up) so typing doesn't
 // force a re-render/refetch of the whole roster on every keystroke — they're
@@ -137,6 +148,7 @@ function AttendanceChecker({ planId, onDateSelect }) {
   if (!activePlan) return <p className="attendance-view">Loading plan...</p>
 
   const sectionGroups = groupRosterBySection(roster)
+  const remarksSummary = getRemarksSummary(roster)
 
   return (
     <div className="attendance-view">
@@ -164,6 +176,40 @@ function AttendanceChecker({ planId, onDateSelect }) {
             </ul>
           </div>
         ))}
+      </div>
+
+      <div className="attendance-remarks-summary">
+        <h2 className="attendance-remarks-summary-title">Late / Excused Remarks</h2>
+        {remarksSummary.length === 0 ? (
+          <p className="attendance-remarks-summary-empty">
+            No late or excused members left a remark for this rehearsal yet.
+          </p>
+        ) : (
+          <div className="attendance-section-groups">
+            {remarksSummary.map(({ section, entries }) => (
+              <div key={section} className="attendance-section-group">
+                <h3 className="attendance-section-group-title">
+                  {SECTION_GROUP_TITLES[section] || section}{' '}
+                  <span className="attendance-section-group-count">({entries.length})</span>
+                </h3>
+                <ul className="attendance-remarks-summary-list">
+                  {entries.map((entry) => (
+                    <li key={entry.member_id}>
+                      <span className="member-section-badge">{sectionLabel(entry)}</span>
+                      <span className="member-name">{entry.name}</span>
+                      <span
+                        className={`attendance-remarks-summary-status status-${entry.status.toLowerCase()}`}
+                      >
+                        {entry.status}
+                      </span>
+                      <span className="attendance-remarks-summary-note">{entry.remarks}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

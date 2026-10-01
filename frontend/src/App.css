@@ -1001,6 +1001,68 @@ form button[type="submit"]:hover {
   cursor: not-allowed;
 }
 
+/* ---------- Attendance remarks summary (Late/Absent with a note) ---------- */
+
+.attendance-remarks-summary {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.attendance-remarks-summary-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.attendance-remarks-summary-empty {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.attendance-remarks-summary-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.attendance-remarks-summary-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.4rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.attendance-remarks-summary-status {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-pill);
+}
+
+.attendance-remarks-summary-status.status-excused {
+  background: #F5E439;
+  color: #042a37;
+}
+
+.attendance-remarks-summary-status.status-late {
+  background: #f97144;
+  color: #042a37;
+}
+
+.attendance-remarks-summary-note {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ---------- Analytics view ---------- */
 
 .analytics-view {
