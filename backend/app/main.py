@@ -172,6 +172,29 @@ class MemberAttendanceOut(BaseModel):
     late_count: int = 0
     attendance_rate: float
 
+class MemberRehearsalLogEntryOut(BaseModel):
+    rehearsal_plan_id: int
+    date: date_type
+    title: str | None = None
+    status: str
+    remarks: str | None = None
+
+class MemberGigLogEntryOut(BaseModel):
+    gig_id: int
+    date: date_type
+    event_name: str
+    status: str
+    remarks: str | None = None
+
+class MemberAttendanceHistoryOut(BaseModel):
+    member_id: int
+    name: str
+    section: str
+    attendance_rate: float
+    total_records: int
+    rehearsal_log: list[MemberRehearsalLogEntryOut] = []
+    gig_log: list[MemberGigLogEntryOut] = []
+
 class OverallRateOut(BaseModel):
     attendance_rate: float
     total_records: int
@@ -731,6 +754,77 @@ async def at_risk_members(db: Session = Depends(get_db)):
                 historical_rate=historical_rate,
             ))
     return at_risk
+
+#Attendance history for a single member: rehearsal log + gig log (each with
+#remarks), plus a combined attendance rate, optionally scoped to a date
+#range. Powers the "click a member" detail view — the date range filter
+#applies to each log by its own date (rehearsal date / gig date).
+@app.get("/members/{id}/attendance-history", response_model=MemberAttendanceHistoryOut, dependencies=[Depends(verify_access_code)])
+async def get_member_attendance_history(
+    id: int,
+    date_from: date_type | None = None,
+    date_to: date_type | None = None,
+    db: Session = Depends(get_db),
+):
+    member = db.query(MemberModel).filter(MemberModel.id == id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="member not found")
+
+    rehearsal_query = (
+        db.query(AttendanceModel, RehearsalPlanModel)
+        .join(RehearsalPlanModel, AttendanceModel.rehearsal_plan_id == RehearsalPlanModel.id)
+        .filter(AttendanceModel.member_id == id)
+    )
+    if date_from:
+        rehearsal_query = rehearsal_query.filter(RehearsalPlanModel.date >= date_from)
+    if date_to:
+        rehearsal_query = rehearsal_query.filter(RehearsalPlanModel.date <= date_to)
+    rehearsal_rows = rehearsal_query.order_by(RehearsalPlanModel.date.desc()).all()
+
+    gig_query = (
+        db.query(AttendanceModel, GigModel)
+        .join(GigModel, AttendanceModel.gig_id == GigModel.id)
+        .filter(AttendanceModel.member_id == id)
+    )
+    if date_from:
+        gig_query = gig_query.filter(GigModel.date >= date_from)
+    if date_to:
+        gig_query = gig_query.filter(GigModel.date <= date_to)
+    gig_rows = gig_query.order_by(GigModel.date.desc()).all()
+
+    rehearsal_log = [
+        MemberRehearsalLogEntryOut(
+            rehearsal_plan_id=plan.id,
+            date=plan.date,
+            title=plan.title,
+            status=record.status,
+            remarks=record.remarks,
+        )
+        for record, plan in rehearsal_rows
+    ]
+    gig_log = [
+        MemberGigLogEntryOut(
+            gig_id=gig.id,
+            date=gig.date,
+            event_name=gig.event_name,
+            status=record.status,
+            remarks=record.remarks,
+        )
+        for record, gig in gig_rows
+    ]
+
+    all_records = [record for record, _ in rehearsal_rows] + [record for record, _ in gig_rows]
+    counts = _tally_status(all_records)
+
+    return MemberAttendanceHistoryOut(
+        member_id=member.id,
+        name=member.name,
+        section=member.section,
+        attendance_rate=_rate_from_counts(counts),
+        total_records=len(all_records),
+        rehearsal_log=rehearsal_log,
+        gig_log=gig_log,
+    )
 
 #List all gigs
 @app.get("/gigs", response_model=list[GigOut], dependencies=[Depends(verify_access_code)])

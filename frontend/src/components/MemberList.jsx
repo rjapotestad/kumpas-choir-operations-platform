@@ -9,7 +9,7 @@ function sectionLabel(member) {
   return member.subsection ? `${initial}${member.subsection}` : initial
 }
 
-function MemberList({ onEdit, refreshSignal }) {
+function MemberList({ onEdit, onView, refreshSignal }) {
   const [members, setMembers] = useState([])
   const [sectionFilter, setSectionFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -45,11 +45,11 @@ function MemberList({ onEdit, refreshSignal }) {
       </div>
       <ul className="member-management-list">
         {members.map((member) => (
-          <li key={member.id}>
+          <li key={member.id} className="member-row-clickable" onClick={() => onView?.(member.id)}>
             <span className="member-section-badge">{sectionLabel(member)}</span>
             <span className="member-name">{member.name}</span>
             <span className="member-status-badge">{member.status}</span>
-            <div className="song-actions">
+            <div className="song-actions" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => onEdit(member)}>Edit</button>
               <button onClick={() => handleDelete(member.id)}>Delete</button>
             </div>

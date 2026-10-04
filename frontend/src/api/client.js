@@ -134,6 +134,18 @@ export async function getMembers(filters = {}) {
   return apiFetch(`/members${query}`)
 }
 
+export async function getMember(id) {
+  return apiFetch(`/members/${id}`)
+}
+
+export async function getMemberAttendanceHistory(id, range = {}) {
+  const params = new URLSearchParams()
+  if (range.from) params.set('date_from', range.from)
+  if (range.to) params.set('date_to', range.to)
+  const query = params.toString() ? `?${params.toString()}` : ''
+  return apiFetch(`/members/${id}/attendance-history${query}`)
+}
+
 export async function createMember(member) {
   return apiFetch('/members', {
     method: 'POST',
