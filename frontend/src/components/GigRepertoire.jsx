@@ -17,7 +17,7 @@ function SortableRepertoireItem({ item, onRemove }) {
   )
 }
 
-function GigRepertoire({ gigId, onClose }) {
+function GigRepertoire({ gigId, onClose, onChange }) {
   const [gig, setGig] = useState(null)
   const [songs, setSongs] = useState([])
   const [selectedSongId, setSelectedSongId] = useState('')
@@ -30,6 +30,7 @@ function GigRepertoire({ gigId, onClose }) {
   async function refresh() {
     const updated = await getGig(gigId)
     setGig(updated)
+    if (onChange) onChange()
   }
 
   async function handleAdd() {
@@ -52,6 +53,7 @@ function GigRepertoire({ gigId, onClose }) {
     const reordered = arrayMove(gig.items, oldIndex, newIndex)
     setGig({ ...gig, items: reordered })
     await Promise.all(reordered.map((item, index) => updateGigItem(gigId, item.id, { order_index: index })))
+    if (onChange) onChange()
   }
 
   if (!gig) return <p>Loading...</p>
@@ -77,7 +79,7 @@ function GigRepertoire({ gigId, onClose }) {
           </ul>
         </SortableContext>
       </DndContext>
-      <button type="button" onClick={onClose}>Close</button>
+      {onClose && <button type="button" onClick={onClose}>Close</button>}
     </div>
   )
 }

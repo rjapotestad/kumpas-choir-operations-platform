@@ -6,7 +6,7 @@ function sectionLabel(entry) {
   return entry.subsection ? `${initial}${entry.subsection}` : initial
 }
 
-function GigPersonnel({ gigId, onClose }) {
+function GigPersonnel({ gigId, onClose, onChange }) {
   const [gig, setGig] = useState(null)
   const [roster, setRoster] = useState([])
   const [selectedMemberId, setSelectedMemberId] = useState('')
@@ -35,6 +35,7 @@ function GigPersonnel({ gigId, onClose }) {
   async function refreshRoster() {
     const updated = await getGigRoster(gigId)
     setRoster(updated)
+    if (onChange) onChange()
   }
 
   async function handleAdd() {
@@ -73,7 +74,7 @@ function GigPersonnel({ gigId, onClose }) {
           <h3>{gig.event_name} — Personnel</h3>
           <p className="gig-personnel-meta">{gig.date}{gig.venue ? ` · ${gig.venue}` : ''}</p>
         </div>
-        <button className="secondary-action" onClick={onClose}>Close</button>
+        {onClose && <button className="secondary-action" onClick={onClose}>Close</button>}
       </div>
       {error && <p className="attendance-error">Could not update personnel: {error}</p>}
 

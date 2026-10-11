@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getGigs, deleteGig } from '../api/client'
 
-function GigList({ onEdit, onOpenRepertoire, onOpenPersonnel, refreshSignal }) {
+function GigList({ onOpen, refreshSignal }) {
   const [gigs, setGigs] = useState([])
 
   useEffect(() => {
@@ -18,15 +18,19 @@ function GigList({ onEdit, onOpenRepertoire, onOpenPersonnel, refreshSignal }) {
   }
 
   return (
-    <ul className="member-management-list">
+    <ul className="member-management-list gig-list">
       {gigs.map((gig) => (
-        <li key={gig.id}>
+        <li key={gig.id} className="gig-list-row" onClick={() => onOpen(gig.id)}>
           <span className="member-name">{gig.event_name} — {gig.date}{gig.venue ? ` @ ${gig.venue}` : ''}</span>
           <div className="song-actions">
-            <button onClick={() => onOpenRepertoire(gig.id)}>Repertoire</button>
-            <button onClick={() => onOpenPersonnel(gig.id)}>Personnel</button>
-            <button onClick={() => onEdit(gig)}>Edit</button>
-            <button onClick={() => handleDelete(gig.id)}>Delete</button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation() // don't also open the gig
+                handleDelete(gig.id)
+              }}
+            >
+              Delete
+            </button>
           </div>
         </li>
       ))}

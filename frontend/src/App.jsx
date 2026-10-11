@@ -48,7 +48,7 @@ function App() {
           <button className={activeView === 'rehearsal' ? 'active' : ''} onClick={() => setActiveView('rehearsal')}>Rehearsal Planning</button>
           <button className={activeView === 'library' ? 'active' : ''} onClick={() => setActiveView('library')}>Library</button>
           <button className={activeView === 'attendance' ? 'active' : ''} onClick={() => setActiveView('attendance')}>Attendance</button>
-          <button className={activeView === 'gigs' ? 'active' : ''} onClick={() => setActiveView('gigs')}>Gigs</button>
+          <button className={activeView === 'gigs' ? 'active' : ''} onClick={() => { setSelectedGigId(null); setActiveView('gigs') }}>Gigs</button>
           <button className={activeView === 'members' ? 'active' : ''} onClick={() => setActiveView('members')}>Members</button>
           <button className={activeView === 'analytics' ? 'active' : ''} onClick={() => setActiveView('analytics')}>Analytics</button>
         </nav>
